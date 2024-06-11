@@ -11,7 +11,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.turbotech.displaytest.screens.HomePage
-import com.turbotech.displaytest.screens.MultiTouch
+import com.turbotech.displaytest.screens.MultiTouches
 import com.turbotech.displaytest.screens.SingleTouch
 import com.turbotech.displaytest.screens.SwipeScreenTest
 import com.turbotech.displaytest.ui.theme.DisplayTestTheme
@@ -49,7 +49,7 @@ fun Display_Test() {
             SingleTouch(navController, viewModel)
         }
         composable(route = "MultiTouch") {
-            MultiTouch(navController)
+            MultiTouches(navController)
         }
 //        composable("StillToDecide"){
 //            StillToDecide()
