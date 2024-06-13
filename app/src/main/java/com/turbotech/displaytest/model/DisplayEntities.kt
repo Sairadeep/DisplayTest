@@ -11,14 +11,13 @@ data class DisplayEntities(
     @PrimaryKey
     val id: UUID = UUID.randomUUID(),
 
-    @ColumnInfo(name = "swipe_screen_test_result")
-    val swipeScreenTestResult: Boolean,
+    @ColumnInfo(name = "display_test_type_name")
+    val testName: String,
 
-    @ColumnInfo(name = "single_touch_test_result")
-    val singleTouchTestResult: Boolean,
+    @ColumnInfo(name = "test_started")
+    val isTestStarted: Boolean,
 
-    @ColumnInfo(name = "result_time")
-    val resultTime: Long = System.currentTimeMillis()
-
+    @ColumnInfo(name = "test_result")
+    val testResult: Boolean,
 
 )

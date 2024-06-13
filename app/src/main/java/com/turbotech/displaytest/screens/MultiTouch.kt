@@ -29,16 +29,25 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavController
 import com.turbotech.displaytest.components.IconBtnFn
 import com.turbotech.displaytest.components.TextFn
-import kotlinx.coroutines.delay
+import com.turbotech.displaytest.model.DisplayEntities
+import com.turbotech.displaytest.viewModel.DisplayTestVM
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
 @Composable
-fun MultiTouches(navController: NavController) {
+fun MultiTouches(navController: NavController, displayTestVM: DisplayTestVM) {
 
     val context = LocalContext.current
     val currentClicks = remember { mutableIntStateOf(0) }
     val releaseState = remember { mutableStateOf(false) }
-
+    LaunchedEffect(Unit) {
+        displayTestVM.insertResult(
+            DisplayEntities(
+                testName = displayTestVM.multiTouchTestName,
+                isTestStarted = true,
+                testResult = false
+            )
+        )
+    }
     Surface(modifier = Modifier.fillMaxSize()) {
         Scaffold(
             topBar = {
@@ -102,14 +111,19 @@ fun MultiTouches(navController: NavController) {
                     Log.d("currentClicks", "${currentClicks.intValue}")
                     if (currentClicks.intValue > 2) {
                         Toast.makeText(context, "Test completed...!", Toast.LENGTH_SHORT).show()
-                        LaunchedEffect(Unit) {
-                            delay(1200)
+                        displayTestVM.updateResult(
+                            DisplayEntities(
+                                id = displayTestVM.specificTestId(),
+                                testName = displayTestVM.multiTouchTestName,
+                                isTestStarted = false,
+                                testResult = true
+                            )
+                        )
                             navController.navigate("HomePage")
-                        }
-//                        DB ni petali and also card design and animation
                     }
                 }
             }
         }
     }
 }
+

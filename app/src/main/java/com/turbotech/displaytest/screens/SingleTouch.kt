@@ -43,7 +43,6 @@ import com.turbotech.displaytest.components.IconBtnFn
 import com.turbotech.displaytest.components.TextFn
 import com.turbotech.displaytest.model.DisplayEntities
 import com.turbotech.displaytest.viewModel.DisplayTestVM
-import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -57,8 +56,15 @@ fun SingleTouch(navController: NavController, displayTestVM: DisplayTestVM) {
     val noC = remember {
         mutableIntListOf()
     }
-
-
+    LaunchedEffect(Unit) {
+        displayTestVM.insertResult(
+            DisplayEntities(
+                testName = displayTestVM.singleTouchTestName,
+                isTestStarted = true,
+                testResult = false
+            )
+        )
+    }
     Scaffold(
         topBar = {
             TopAppBar(
@@ -146,18 +152,16 @@ fun SingleTouch(navController: NavController, displayTestVM: DisplayTestVM) {
                 }
             } else {
                 // provide animation or navigate to home screen with a delay of 2 seconds
-                LaunchedEffect(Unit) {
-                    Toast.makeText(context, "Test completed...!", Toast.LENGTH_SHORT).show()
-                    delay(2000)
-                    navController.navigate("HomePage")
-                    displayTestVM.insertResult(
-                        DisplayEntities(
-                            swipeScreenTestResult = false,
-                            singleTouchTestResult = true
-                        )
+                Toast.makeText(context, "Test completed...!", Toast.LENGTH_SHORT).show()
+                navController.navigate("HomePage")
+                displayTestVM.updateResult(
+                    DisplayEntities(
+                        id = displayTestVM.specificTestId(),
+                        testName = displayTestVM.singleTouchTestName,
+                        isTestStarted = false,
+                        testResult = true
                     )
-//                    On navigating back send the size of entries, also.
-                }
+                )
             }
         }
     }

@@ -1,7 +1,9 @@
 package com.turbotech.displaytest.screens
 
+import android.os.CountDownTimer
 import android.util.Log
 import android.view.MotionEvent
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
@@ -12,6 +14,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -23,15 +26,28 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInteropFilter
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavController
+import com.turbotech.displaytest.model.DisplayEntities
+import com.turbotech.displaytest.viewModel.DisplayTestVM
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-fun SwipeScreenTest(navController: NavController) {
+fun SwipeScreenTest(navController: NavController, displayTestVM: DisplayTestVM) {
+
+    val context = LocalContext.current
+    val timerState = remember { mutableStateOf(false) }
+    lateinit var timer: CountDownTimer
+    val drawWidth = remember { mutableFloatStateOf(0f) }
+    val drawHeight = remember { mutableFloatStateOf(0f) }
     BackHandler (
-        enabled = true,
+        enabled = false,
         onBack = {
-            navController.navigate("HomePage")
+            if (timerState.value) {
+                Toast.makeText(context, "Back Navigation restricted", Toast.LENGTH_SHORT).show()
+            } else {
+                navController.navigate("HomePage")
+            }
         }
     )
     val lastTouchInX = remember {
@@ -48,6 +64,19 @@ fun SwipeScreenTest(navController: NavController) {
     val lastInteractionTime = remember {
         mutableLongStateOf(0L)
     }
+    val swipeResult = remember { mutableStateOf(false) }
+    val drawTimeStatus = remember {
+        mutableStateOf(false)
+    }
+    LaunchedEffect(Unit) {
+        displayTestVM.insertResult(
+            DisplayEntities(
+                testName = displayTestVM.swipeTestName,
+                isTestStarted = true,
+                testResult = false
+            )
+        )
+    }
 
     Column(
     modifier = Modifier
@@ -55,7 +84,24 @@ fun SwipeScreenTest(navController: NavController) {
     verticalArrangement = Arrangement.Center,
     horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        timer = object : CountDownTimer(30000, 1000) {
+            override fun onTick(millisUntilFinished: Long) {
+                Log.d("TimerX", "yet to end ${millisUntilFinished / 1000}")
+                drawTimeStatus.value = false
+            }
 
+            override fun onFinish() {
+                drawTimeStatus.value = true
+                Toast.makeText(context, "Test Completed..!", Toast.LENGTH_SHORT).show()
+                navController.navigate("HomePage")
+            }
+
+        }
+
+        LaunchedEffect(Unit) {
+            timer.start()
+        }
+        
         Box {
 
             Canvas(
@@ -103,6 +149,8 @@ fun SwipeScreenTest(navController: NavController) {
                         true
                     }
             ) {
+                drawWidth.floatValue = this.drawContext.size.width
+                drawHeight.floatValue = this.drawContext.size.height
 //              Draw path
                 Log.d("Draw_Size", "${this.drawContext.size}")
                 path.value?.let {
@@ -110,19 +158,37 @@ fun SwipeScreenTest(navController: NavController) {
                         path = it,
                         color = Color.Green,
                         style = Stroke(
-                            width = 100f
+                            width = 200f
                         )
                     )
                 }
                 Log.d("Draw_Size","I'm ${this.size.width} ${path.value?.getBounds()?.width} ${path.value?.getBounds()?.height}")
                 sizeRemainedInWidth.floatValue = path.value?.getBounds()?.width!!
                 sizeRemainedInHeight.floatValue = path.value?.getBounds()?.height!!
-                if((((this.drawContext.size.width - sizeRemainedInWidth.floatValue) > 10) || ((this.drawContext.size.height - sizeRemainedInHeight.floatValue) > 10))
-                    && ((System.currentTimeMillis() - lastInteractionTime.longValue) < 10)){
-                    Log.d("Draw_Size","Display has an issue")
-                }else{
-                    Log.d("Draw_Size","Display is fine")
+            }
+           if(drawTimeStatus.value) {
+                val x = drawWidth.floatValue - sizeRemainedInWidth.floatValue
+                val y = drawHeight.floatValue - sizeRemainedInHeight.floatValue
+                if (x > 30 || y > 30) {
+                    Log.d("TimerX", "Display has an issue $x, $y")
+                    swipeResult.value = false
+                    timer.cancel()
+                } else {
+                    Log.d("TimerX", "Display is fine $x, $y")
+                    swipeResult.value = true
+                    timer.cancel()
                 }
+                timer.cancel()
+            }
+            if (swipeResult.value) {
+                displayTestVM.updateResult(
+                    DisplayEntities(
+                        id = displayTestVM.specificTestId(),
+                        testName = displayTestVM.swipeTestName,
+                        isTestStarted = false,
+                        testResult = true
+                    )
+                )
             }
         }
     }

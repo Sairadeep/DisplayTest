@@ -11,6 +11,11 @@ class ResultsRepo @Inject constructor(private val displayTestDao: DisplayTestDao
 
     fun getResultsData() = displayTestDao.getResultsData()
 
+    suspend fun updateResults(displayEntities: DisplayEntities) =
+        displayTestDao.update(displayEntities)
+
+
+
 //    suspend fun deleteResults(displayEntities: DisplayEntities) = displayTestDao.delete(displayEntities)
 
 }

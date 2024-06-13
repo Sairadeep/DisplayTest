@@ -39,21 +39,19 @@ fun Display_Test() {
     val navController = rememberNavController()
 
     NavHost(navController = navController, startDestination = "HomePage") {
+
         composable("HomePage") {
             HomePage(navController, viewModel)
         }
         composable(route = "SwipeScreenTest") {
-            SwipeScreenTest(navController)
+            SwipeScreenTest(navController, viewModel)
         }
         composable("SingleTouch") {
             SingleTouch(navController, viewModel)
         }
         composable(route = "MultiTouch") {
-            MultiTouches(navController)
+            MultiTouches(navController, viewModel)
         }
-//        composable("StillToDecide"){
-//            StillToDecide()
-//        }
     }
 }
 
