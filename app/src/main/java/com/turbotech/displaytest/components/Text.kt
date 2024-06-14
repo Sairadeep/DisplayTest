@@ -12,7 +12,7 @@ import androidx.compose.ui.unit.sp
 fun TextFn(text: String, color: Color) {
     Text(
         text = text,
-        fontSize = 24.sp,
+        fontSize = 22.sp,
         fontStyle = FontStyle.Italic,
         fontWeight = FontWeight.Bold,
         color = color

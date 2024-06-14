@@ -15,11 +15,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableIntStateOf
@@ -59,16 +56,7 @@ fun HomePage(navController: NavHostController, displayTestVM: DisplayTestVM) {
     Surface {
         Scaffold(
             topBar = {
-                TopAppBar(
-                    title = {
-                        TextFn(text = "Display Test", color = Color.White)
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        titleContentColor = Color.White
-                    ),
-                    scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
-                )
+                displayTestVM.DisplayTopAppBar(text = "Display Test", navController)
             }
         ) {
             Column(
@@ -192,8 +180,8 @@ fun HomePage(navController: NavHostController, displayTestVM: DisplayTestVM) {
                     }
                 }
             }
-        }
     }
+}
 
 
 

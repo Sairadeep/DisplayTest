@@ -36,8 +36,8 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun Display_Test() {
-    val viewModel = viewModel<DisplayTestVM>()
     val navController = rememberNavController()
+    val viewModel = viewModel<DisplayTestVM>()
 
     NavHost(navController = navController, startDestination = "HomePage") {
 
@@ -45,16 +45,16 @@ fun Display_Test() {
             HomePage(navController, viewModel)
         }
         composable(route = "SwipeScreenTest") {
-            SwipeScreenTest(navController, viewModel)
+            SwipeScreenTest(navController,viewModel)
         }
         composable("SingleTouch") {
-            SingleTouch(navController, viewModel)
+            SingleTouch(navController,viewModel)
         }
         composable(route = "MultiTouch") {
-            MultiTouches(navController, viewModel)
+            MultiTouches(navController,viewModel)
         }
         composable(route = "PinchToZoom") {
-            PinchToZoom(navController, viewModel)
+            PinchToZoom(navController,viewModel)
         }
     }
 }

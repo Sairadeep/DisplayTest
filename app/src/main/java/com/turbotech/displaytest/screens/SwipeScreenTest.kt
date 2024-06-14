@@ -28,7 +28,6 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavController
-import com.turbotech.displaytest.model.DisplayEntities
 import com.turbotech.displaytest.viewModel.DisplayTestVM
 
 @OptIn(ExperimentalComposeUiApi::class)
@@ -69,13 +68,7 @@ fun SwipeScreenTest(navController: NavController, displayTestVM: DisplayTestVM) 
         mutableStateOf(false)
     }
     LaunchedEffect(Unit) {
-        displayTestVM.insertResult(
-            DisplayEntities(
-                testName = displayTestVM.swipeTestName,
-                isTestStarted = true,
-                testResult = false
-            )
-        )
+        displayTestVM.insertResultBeforeTest(displayTestVM.swipeTestName)
     }
 
     Column(
@@ -181,13 +174,10 @@ fun SwipeScreenTest(navController: NavController, displayTestVM: DisplayTestVM) 
                 timer.cancel()
             }
             if (swipeResult.value) {
-                displayTestVM.updateResult(
-                    DisplayEntities(
-                        id = displayTestVM.specificTestId(),
-                        testName = displayTestVM.swipeTestName,
-                        isTestStarted = false,
-                        testResult = true
-                    )
+                displayTestVM.UpdateResultAfterTest(
+                    context = context,
+                    testName = displayTestVM.swipeTestName,
+                    navController = navController
                 )
             }
         }
