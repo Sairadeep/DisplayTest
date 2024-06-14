@@ -158,7 +158,7 @@ fun SwipeScreenTest(navController: NavController, displayTestVM: DisplayTestVM) 
                         path = it,
                         color = Color.Green,
                         style = Stroke(
-                            width = 200f
+                            width = 100f
                         )
                     )
                 }

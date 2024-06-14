@@ -25,6 +25,7 @@ class DisplayTestVM @Inject constructor(private val resultsRepo: ResultsRepo) : 
     val swipeTestName: String = "Swipe_Screen_Test"
     val singleTouchTestName: String = "Single_Touch_Test"
     val multiTouchTestName: String = "Multi_Touch_Test"
+    val pinchToZoomTestName: String = "Pinch_To_Zoom_Test"
 
     init {
         viewModelScope.launch {
@@ -51,25 +52,6 @@ class DisplayTestVM @Inject constructor(private val resultsRepo: ResultsRepo) : 
             resultsRepo.updateResults(result)
         }
 
-    /*
-    @Composable
-    fun CardContentColor(
-        cardState: Boolean,
-        text: String
-    ) {
-        val entriesCount = getResults().size
-        if (entriesCount != 0) {
-            if (cardState) {
-                TextFn(text = text, color = colorResource(id = R.color.teal_700))
-            } else {
-                TextFn(text = text, color = Color.Red)
-            }
-        } else {
-            TextFn(text = text, color = Color.Black)
-        }
-    }*/
-
-
     @Composable
     fun getResults() = results.collectAsState().value
 
@@ -78,6 +60,7 @@ class DisplayTestVM @Inject constructor(private val resultsRepo: ResultsRepo) : 
 //         0 -> Swipe Screen Test
 //         1 -> Single Touch Test
 //         2 -> Multi Touch Test
+//         3 -> Pinch To Zoom Test
 //        99 -> No Test
         return when (getResults().size) {
             0 -> 99
@@ -86,6 +69,7 @@ class DisplayTestVM @Inject constructor(private val resultsRepo: ResultsRepo) : 
                     swipeTestName -> return 0
                     singleTouchTestName -> return 1
                     multiTouchTestName -> return 2
+                    pinchToZoomTestName -> return 3
                     else -> return 99
                 }
             }
@@ -95,6 +79,7 @@ class DisplayTestVM @Inject constructor(private val resultsRepo: ResultsRepo) : 
                     swipeTestName -> return 0
                     singleTouchTestName -> return 1
                     multiTouchTestName -> return 2
+                    pinchToZoomTestName -> return 3
                     else -> return 99
                 }
             }

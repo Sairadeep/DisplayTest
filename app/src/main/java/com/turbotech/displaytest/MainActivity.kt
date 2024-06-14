@@ -12,6 +12,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.turbotech.displaytest.screens.HomePage
 import com.turbotech.displaytest.screens.MultiTouches
+import com.turbotech.displaytest.screens.PinchToZoom
 import com.turbotech.displaytest.screens.SingleTouch
 import com.turbotech.displaytest.screens.SwipeScreenTest
 import com.turbotech.displaytest.ui.theme.DisplayTestTheme
@@ -51,6 +52,9 @@ fun Display_Test() {
         }
         composable(route = "MultiTouch") {
             MultiTouches(navController, viewModel)
+        }
+        composable(route = "PinchToZoom") {
+            PinchToZoom(navController, viewModel)
         }
     }
 }

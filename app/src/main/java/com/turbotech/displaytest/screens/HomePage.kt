@@ -83,7 +83,7 @@ fun HomePage(navController: NavHostController, displayTestVM: DisplayTestVM) {
                 testStartState.value = displayTestVM.isSpecificTestStarted()
                 Log.d("PageLoader", "${testName.intValue} ${testResult.value}")
                 LazyVerticalGrid(columns = GridCells.Adaptive(225.dp)) {
-                    items(count = 3) { index ->
+                    items(count = 4) { index ->
                         Card(
                             onClick = {
                                 when (index) {
@@ -108,10 +108,21 @@ fun HomePage(navController: NavHostController, displayTestVM: DisplayTestVM) {
                                         if (allTestResults[displayTestVM.singleTouchTestName] != null) {
                                             navController.navigate(route = "MultiTouch")
                                         } else {
-                                            Log.d("XRRRRR", "${testResult.value}")
                                             Toast.makeText(
                                                 context,
                                                 "Please complete single touch test first",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                        }
+                                    }
+
+                                    3 -> {
+                                        if (allTestResults[displayTestVM.multiTouchTestName] != null) {
+                                            navController.navigate(route = "PinchToZoom")
+                                        } else {
+                                            Toast.makeText(
+                                                context,
+                                                "Please complete multi touch test first",
                                                 Toast.LENGTH_SHORT
                                             ).show()
                                         }
@@ -132,6 +143,8 @@ fun HomePage(navController: NavHostController, displayTestVM: DisplayTestVM) {
                                     index == 1 && allTestResults[displayTestVM.singleTouchTestName] == false -> Color.Red
                                     index == 2 && allTestResults[displayTestVM.multiTouchTestName] == true -> Color.Green
                                     index == 2 && allTestResults[displayTestVM.multiTouchTestName] == false -> Color.Red
+                                    index == 3 && allTestResults[displayTestVM.pinchToZoomTestName] == true -> Color.Green
+                                    index == 3 && allTestResults[displayTestVM.pinchToZoomTestName] == false -> Color.Red
                                     else -> Color.LightGray
                                 },
                                 disabledContentColor = Color.Magenta
@@ -162,6 +175,10 @@ fun HomePage(navController: NavHostController, displayTestVM: DisplayTestVM) {
 
                                     2 -> {
                                         itemText.value = "Multi Touch"
+                                    }
+
+                                    3 -> {
+                                        itemText.value = "Pinch To Zoom"
                                     }
 
                                     else -> {

@@ -14,8 +14,6 @@ class ResultsRepo @Inject constructor(private val displayTestDao: DisplayTestDao
     suspend fun updateResults(displayEntities: DisplayEntities) =
         displayTestDao.update(displayEntities)
 
-
-
 //    suspend fun deleteResults(displayEntities: DisplayEntities) = displayTestDao.delete(displayEntities)
 
 }
