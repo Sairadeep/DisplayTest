@@ -5,50 +5,70 @@ import android.util.Log
 import android.view.MotionEvent
 import android.widget.Toast
 import androidx.collection.mutableIntListOf
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
+import androidx.wear.compose.material.Text
 import com.turbotech.displaytest.R
+import com.turbotech.displaytest.components.CardImage
 import com.turbotech.displaytest.components.IconBtnFn
 import com.turbotech.displaytest.components.TextFn
 import com.turbotech.displaytest.components.cardElevation
@@ -78,6 +98,11 @@ class DisplayTestVM @Inject constructor(private val resultsRepo: ResultsRepo) : 
     val yPosition = mutableStateOf(0.dp)
     val noOfClicks = mutableIntStateOf(0)
     val noC = mutableIntListOf()
+    private val speakerImageId = mutableIntStateOf(0)
+    private val displayImageId = mutableIntStateOf(0)
+    private val cardText = mutableStateOf("Dummy")
+    private val heightOfIt = 250.dp
+    private val borderColor = R.color.orange
     private val currentClicks = mutableIntStateOf(0)
     private val releaseState = mutableStateOf(false)
 
@@ -182,8 +207,8 @@ class DisplayTestVM @Inject constructor(private val resultsRepo: ResultsRepo) : 
                 "Current_SCALE_ROTATION",
                 "scale: ${scale.floatValue} offset: $offset rotation: ${rotation.floatValue}"
             )
-            // Rotation > 330 degrees and zoom up to 4 times
         }
+        // Rotation > 330 degrees and zoom up to 4 times
         return rotation.floatValue > 180 && scale.floatValue > 4
     }
 
@@ -239,10 +264,10 @@ class DisplayTestVM @Inject constructor(private val resultsRepo: ResultsRepo) : 
     fun TextBasedOnClicks() {
         if (noOfClicks.intValue <= 15) {
             val text = " Remaining Clicks : ${noOfClicks.intValue} / 15"
-            TextFn(text = text, color = Color.Black)
+            TextFn(text = text, color = Color.Black, size = 18)
         } else {
             val text = "Test Completed"
-            TextFn(text = text, color = Color.Black)
+            TextFn(text = text, color = Color.Black, size = 18)
         }
     }
 
@@ -250,7 +275,7 @@ class DisplayTestVM @Inject constructor(private val resultsRepo: ResultsRepo) : 
     @OptIn(ExperimentalMaterial3Api::class)
     fun DisplayTopAppBar(text: String, navController: NavController) {
         TopAppBar(
-            title = { TextFn(text = text, color = Color.White) },
+            title = { TextFn(text = text, color = Color.White, size = 22) },
             navigationIcon = {
                 IconBtnFn(navController = navController)
             },
@@ -289,7 +314,8 @@ class DisplayTestVM @Inject constructor(private val resultsRepo: ResultsRepo) : 
         if (releaseState.value) {
             TextFn(
                 text = "Multi Touch has ${currentClicks.intValue} touches",
-                color = Color.White
+                color = Color.White,
+                size = 18
             )
             Log.d("currentClicks", "${currentClicks.intValue}")
             if (currentClicks.intValue > 2) {
@@ -364,44 +390,172 @@ class DisplayTestVM @Inject constructor(private val resultsRepo: ResultsRepo) : 
         index == 2 && allTestResults[multiTouchTestName] == false -> Color.Red
         index == 3 && allTestResults[pinchToZoomTestName] == true -> Color.Green
         index == 3 && allTestResults[pinchToZoomTestName] == false -> Color.Red
-        else -> Color.LightGray
+         else -> {Color.White}
     }
 
-    private fun cardText(index : Int, itemText : MutableState<String>){
-        when (index) {
+    @Composable
+    fun HomePageDesign(
+        navController: NavHostController,
+        allTestResults: Map<String, Boolean>,
+    ) {
+        val expandableState = remember { mutableStateMapOf<Int, Boolean>() }
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(top = 30.dp)
+        ) {
+            items(count = 5) { index ->
+                val rotateValue by animateFloatAsState(
+                    targetValue = if (expandableState[index] == true) 180f else 0f,
+                    label = "Rotate Arrow"
+                )
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(2.dp)
+                        .border(1.5.dp, Color.Black, shape = RoundedCornerShape(12.dp))
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(10.dp),
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            when (index) {
+                                0 -> {
+                                    Text(
+                                        text = "Display Check",
+                                        color = Color.Black,
+                                        fontSize = 22.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.weight(6f)
+                                    )
+                                }
 
-            0 -> {
-                itemText.value = "Swipe Screen"
-            }
+                                1 -> {
+                                    Text(
+                                        text = "Speaker Check",
+                                        color = Color.Black,
+                                        fontSize = 22.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.weight(6f)
+                                    )
+                                }
 
-            1 -> {
-                itemText.value = "Single Touch"
-            }
+                                2 -> {
+                                    Text(
+                                        text = "Connectivity Test",
+                                        color = Color.Black,
+                                        fontSize = 22.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.weight(6f)
+                                    )
+                                }
 
-            2 -> {
-                itemText.value = "Multi Touch"
-            }
+                                3 -> {
+                                    Text(
+                                        text = "Sensor Test",
+                                        color = Color.Black,
+                                        fontSize = 22.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.weight(6f)
+                                    )
+                                }
 
-            3 -> {
-                itemText.value = "Pinch To Zoom"
-            }
+                                else -> {
+                                    Text(
+                                        text = "Camera Test",
+                                        color = Color.Black,
+                                        fontSize = 22.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.weight(6f)
+                                    )
+                                }
+                            }
 
-            else -> {
-                itemText.value = "Dummy"
+
+                            IconButton(
+                                onClick =
+                                {
+                                    expandableState[index] = expandableState[index] != true
+                                },
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .rotate(rotateValue)
+                                    .background(color = Color.LightGray, shape = CircleShape)
+                                    .border(
+                                        width = 1.dp,
+                                        color = colorResource(borderColor),
+                                        shape = CircleShape
+                                    )
+                            ) {
+                                Icon(
+                                    Icons.Default.ArrowDropDown,
+                                    contentDescription = "",
+                                    modifier = Modifier.size(25.dp)
+                                )
+                            }
+
+                        }
+                        expandableState[index]?.let {
+                            AnimatedVisibility(visible = it) {
+                                Column(
+                                    modifier = Modifier
+                                        .padding(top = 5.dp)
+                                        .border(
+                                            width = 1.dp,
+                                            color = colorResource(id = borderColor),
+                                            shape = RoundedCornerShape(12.dp),
+                                        )
+                                ) {
+                                    when (index) {
+                                        0 -> {
+                                            DisplayTestOptions(
+                                                navController = navController,
+                                                allTestResults = allTestResults,
+                                                height = heightOfIt
+                                            )
+                                        }
+
+                                        1 -> SpeakerTestOptions(
+                                            heightOfIt,
+                                            context = LocalContext.current
+                                        )
+
+                                        else -> {
+                                            TextFn(
+                                                text = "No cards available",
+                                                color = Color.Black,
+                                                size = 16
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
     }
 
+
     @Composable
     @OptIn(ExperimentalMaterial3Api::class)
-    fun LazyVerticalGridFn(
+    fun DisplayTestOptions(
         navController: NavHostController,
-        allTestResults: Map<String, Boolean>
+        allTestResults: Map<String, Boolean>,
+        height: Dp
     ) {
         val itemText = remember { mutableStateOf("Dummy") }
         val context = LocalContext.current
-
-        LazyVerticalGrid(columns = GridCells.Adaptive(225.dp)) {
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(3),
+            modifier = Modifier
+                .height(height)
+        ) {
             items(count = 4) { index ->
                 Card(
                     onClick = {
@@ -413,29 +567,149 @@ class DisplayTestVM @Inject constructor(private val resultsRepo: ResultsRepo) : 
                         )
                     },
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .height(80.dp)
-                        .padding(5.dp),
-                    shape = RoundedCornerShape(45.dp),
+                        .clickable(
+                            enabled = true,
+                            onClick = {
+                                Toast
+                                    .makeText(context, "Clicked $index", Toast.LENGTH_SHORT)
+                                    .show()
+                            }
+                        )
+                        .size(125.dp)
+                        .padding(6.dp),
+                    border = BorderStroke(1.5.dp, color = colorResource(borderColor)),
                     colors = CardDefaults.cardColors(
-                        containerColor =
-                        cardColor(index, allTestResults),
-                        disabledContentColor = Color.Magenta
+                        containerColor = cardColor(index, allTestResults),
+                        contentColor = Color.Black
                     ),
                     enabled = true,
                     elevation = cardElevation()
                 ) {
-                    Column(
-                        Modifier.fillMaxSize(),
-                        verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.CenterHorizontally
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .fillMaxSize()
                     ) {
-                        cardText(index, itemText)
-                        TextFn(text = itemText.value, color = Color.Black)
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize(),
+                            verticalArrangement = Arrangement.Center,
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            when (index) {
+                                0 -> {
+                                    displayImageId.intValue = R.drawable.swipe
+                                    itemText.value = "Swipe"
+                                }
+
+                                1 -> {
+                                    displayImageId.intValue = R.drawable.singletouch
+                                    itemText.value = "Single Touch"
+                                }
+
+                                2 -> {
+                                    displayImageId.intValue = R.drawable.multitouch
+                                    itemText.value = "Multi Touch"
+                                }
+
+                                3 -> {
+                                    displayImageId.intValue = R.drawable.pinch
+                                    itemText.value = "Pinch"
+                                }
+                            }
+                            Row {
+                                CardImage(id = displayImageId.intValue)
+                            }
+                            Spacer(modifier = Modifier.height(7.dp))
+
+                            Row {
+                                TextFn(text = itemText.value, color = Color.Black, size = 16)
+                            }
+                        }
                     }
                 }
             }
         }
     }
-    
+
+    @Composable
+    fun SpeakerTestOptions(height: Dp, context: Context) {
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(3),
+            Modifier.height(height)
+        ) {
+            items(count = 6) { index ->
+                when (index) {
+                    0 -> {
+                        speakerImageId.intValue = R.drawable.speaker1
+                        cardText.value = "Speaker"
+                    }
+
+                    1 -> {
+                        speakerImageId.intValue = R.drawable.vibration
+                        cardText.value = "Vibration"
+                    }
+
+                    2 -> {
+                        speakerImageId.intValue = R.drawable.mic_24
+                        cardText.value = "Microphone"
+                    }
+
+                    3 -> {
+                        speakerImageId.intValue = R.drawable.ringtone
+                        cardText.value = "Ringtone"
+                    }
+
+                    4 -> {
+                        speakerImageId.intValue = R.drawable.alarm_on_24
+                        cardText.value = "Alarm"
+                    }
+
+                    else -> {
+                        speakerImageId.intValue = R.drawable.notifications_24
+                        cardText.value = "Notification"
+                    }
+
+                }
+                Card(
+                    modifier = Modifier
+                        .clickable(
+                            enabled = true,
+                            onClick = {
+                                Toast
+                                    .makeText(context, "Clicked $index", Toast.LENGTH_SHORT)
+                                    .show()
+                            }
+                        )
+                        .size(125.dp)
+                        .padding(6.dp),
+                    elevation = cardElevation(),
+                    border = BorderStroke(1.5.dp, color = colorResource(borderColor))
+                ) {
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize(),
+                            verticalArrangement = Arrangement.Center,
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+
+                            Row {
+                                CardImage(speakerImageId.intValue)
+                            }
+
+                            Spacer(modifier = Modifier.height(7.dp))
+
+                            Row {
+                                TextFn(text = cardText.value, color = Color.Black, size = 16)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 }

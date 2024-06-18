@@ -45,7 +45,7 @@ fun HomePage(navController: NavHostController, displayTestVM: DisplayTestVM) {
                     .padding(it), verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                displayTestVM.LazyVerticalGridFn(
+                displayTestVM.HomePageDesign(
                     navController = navController,
                     allTestResults = allTestResults
                 )
@@ -58,15 +58,9 @@ fun HomePage(navController: NavHostController, displayTestVM: DisplayTestVM) {
 @OptIn(ExperimentalMaterial3Api::class)
 private fun HomeTopBar() {
     TopAppBar(
-        title = { TextFn(text = "Display Test", color = Color.White) },
+        title = { TextFn(text = "Display Test", color = Color.White, size = 22) },
         colors = topAppBarColorCombo(),
         scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     )
 }
-
-
-
-
-
-
 
