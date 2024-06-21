@@ -177,8 +177,9 @@ fun SwipeScreenTest(navController: NavController, displayTestVM: DisplayTestVM) 
                 displayTestVM.UpdateResultAfterTest(
                     context = context,
                     testName = displayTestVM.swipeTestName,
-                    navController = navController
+                    testResult = true
                 )
+                navController.navigate("HomePage")
             }
         }
     }

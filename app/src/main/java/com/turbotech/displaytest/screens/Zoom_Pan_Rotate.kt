@@ -3,7 +3,6 @@ package com.turbotech.displaytest.screens
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
@@ -14,7 +13,6 @@ import androidx.navigation.NavController
 import com.turbotech.displaytest.viewModel.DisplayTestVM
 
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PinchToZoom(navController: NavController, displayTestVM: DisplayTestVM) {
 
@@ -38,8 +36,9 @@ fun PinchToZoom(navController: NavController, displayTestVM: DisplayTestVM) {
                     displayTestVM.UpdateResultAfterTest(
                         context = context,
                         testName = displayTestVM.pinchToZoomTestName,
-                        navController = navController
+                        testResult = true
                     )
+                    navController.navigate("HomePage")
                 }
             }
         }

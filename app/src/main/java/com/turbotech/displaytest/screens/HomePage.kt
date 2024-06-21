@@ -1,5 +1,7 @@
 package com.turbotech.displaytest.screens
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -23,6 +25,7 @@ import com.turbotech.displaytest.components.topAppBarColorCombo
 import com.turbotech.displaytest.viewModel.DisplayTestVM
 import kotlinx.coroutines.delay
 
+@RequiresApi(Build.VERSION_CODES.P)
 @Composable
 fun HomePage(navController: NavHostController, displayTestVM: DisplayTestVM) {
 

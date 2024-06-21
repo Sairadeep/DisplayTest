@@ -1,9 +1,18 @@
 package com.turbotech.displaytest.viewModel
 
+import android.Manifest
+import android.app.Activity
 import android.content.Context
+import android.content.pm.PackageManager
+import android.media.MediaPlayer
+import android.media.PlaybackParams
+import android.os.Build
+import android.os.CountDownTimer
+import android.speech.tts.TextToSpeech
 import android.util.Log
 import android.view.MotionEvent
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.collection.mutableIntListOf
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
@@ -26,6 +35,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -33,14 +43,19 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.SheetState
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -59,9 +74,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
@@ -80,6 +98,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
+import java.util.Locale
 import java.util.UUID
 import javax.inject.Inject
 
@@ -93,6 +112,12 @@ class DisplayTestVM @Inject constructor(private val resultsRepo: ResultsRepo) : 
     val singleTouchTestName: String = "Single_Touch_Test"
     val multiTouchTestName: String = "Multi_Touch_Test"
     val pinchToZoomTestName: String = "Pinch_To_Zoom_Test"
+    private val speakTestName: String = "Speaker_Test"
+    private val vibrationTestName: String = "Vibration_Test"
+    private val micTestName: String = "Microphone_Test"
+    private val ringtoneTestName: String = "Ringtone_Test"
+    private val alarmTestName: String = "Alarm_Test"
+    private val notificationTestName: String = "Notification_Test"
     val boxState = mutableStateOf(false)
     val xPosition = mutableStateOf(0.dp)
     val yPosition = mutableStateOf(0.dp)
@@ -101,10 +126,19 @@ class DisplayTestVM @Inject constructor(private val resultsRepo: ResultsRepo) : 
     private val speakerImageId = mutableIntStateOf(0)
     private val displayImageId = mutableIntStateOf(0)
     private val cardText = mutableStateOf("Dummy")
+    private val xId = mutableIntStateOf(99)
     private val heightOfIt = 250.dp
     private val borderColor = R.color.orange
     private val currentClicks = mutableIntStateOf(0)
     private val releaseState = mutableStateOf(false)
+    private val btmSheetExpand = mutableStateOf(false)
+    private lateinit var timer: CountDownTimer
+    private val xText = mutableStateOf("Playing Music")
+    private val yText = mutableStateOf("Did you hear the music with varied pitch?")
+    private val toShowBtn = mutableStateOf(false)
+    private val speakTestResult = mutableStateOf(false)
+    private val ttsStatus = mutableStateOf(false)
+    private val expandableState = mutableStateMapOf<Int, Boolean>()
 
     init {
         viewModelScope.launch {
@@ -213,17 +247,16 @@ class DisplayTestVM @Inject constructor(private val resultsRepo: ResultsRepo) : 
     }
 
     @Composable
-    fun UpdateResultAfterTest(context: Context, testName: String, navController: NavController) {
+    fun UpdateResultAfterTest(context: Context, testName: String, testResult: Boolean) {
         Toast.makeText(context, "Test Completed", Toast.LENGTH_SHORT).show()
         updateResult(
             DisplayEntities(
                 id = specificTestId(),
                 testName = testName,
                 isTestStarted = false,
-                testResult = true
+                testResult = testResult
             )
         )
-        navController.navigate("HomePage")
     }
 
     fun insertResultBeforeTest(testName: String) {
@@ -255,8 +288,9 @@ class DisplayTestVM @Inject constructor(private val resultsRepo: ResultsRepo) : 
             UpdateResultAfterTest(
                 context = LocalContext.current,
                 testName = singleTouchTestName,
-                navController = navController
+                testResult = true
             )
+            navController.navigate("HomePage")
         }
     }
 
@@ -322,8 +356,9 @@ class DisplayTestVM @Inject constructor(private val resultsRepo: ResultsRepo) : 
                 UpdateResultAfterTest(
                     context = LocalContext.current,
                     testName = multiTouchTestName,
-                    navController = navController
+                    testResult = true
                 )
+                navController.navigate("HomePage")
             }
         }
     }
@@ -378,7 +413,7 @@ class DisplayTestVM @Inject constructor(private val resultsRepo: ResultsRepo) : 
         }
     }
 
-     private fun cardColor(
+    private fun cardColorForDT(
         index: Int,
         allTestResults: Map<String, Boolean>
     ) = when {
@@ -393,17 +428,51 @@ class DisplayTestVM @Inject constructor(private val resultsRepo: ResultsRepo) : 
          else -> {Color.White}
     }
 
+    private fun cardColorForST(
+        index: Int,
+        allTestResults: Map<String, Boolean>
+    ) = when {
+        index == 0 && allTestResults[speakTestName] == true -> Color.Green
+        index == 0 && allTestResults[speakTestName] == false -> Color.Red
+        index == 1 && allTestResults[vibrationTestName] == true -> Color.Green
+        index == 1 && allTestResults[vibrationTestName] == false -> Color.Red
+        index == 2 && allTestResults[micTestName] == true -> Color.Green
+        index == 2 && allTestResults[micTestName] == false -> Color.Red
+        index == 3 && allTestResults[ringtoneTestName] == true -> Color.Green
+        index == 3 && allTestResults[ringtoneTestName] == false -> Color.Red
+        index == 4 && allTestResults[alarmTestName] == true -> Color.Green
+        index == 4 && allTestResults[alarmTestName] == false -> Color.Red
+        index == 5 && allTestResults[notificationTestName] == true -> Color.Green
+        index == 5 && allTestResults[notificationTestName] == false -> Color.Red
+        else -> {
+            Color.White
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.P)
     @Composable
     fun HomePageDesign(
         navController: NavHostController,
         allTestResults: Map<String, Boolean>,
     ) {
-        val expandableState = remember { mutableStateMapOf<Int, Boolean>() }
+        val context = LocalContext.current
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(top = 30.dp)
         ) {
+            // Need to change this position to mic test
+            if (ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.RECORD_AUDIO
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                ActivityCompat.requestPermissions(
+                    context as Activity,
+                    arrayOf(Manifest.permission.RECORD_AUDIO, Manifest.permission.CALL_PHONE),
+                    99
+                )
+            }
             items(count = 5) { index ->
                 val rotateValue by animateFloatAsState(
                     targetValue = if (expandableState[index] == true) 180f else 0f,
@@ -475,12 +544,7 @@ class DisplayTestVM @Inject constructor(private val resultsRepo: ResultsRepo) : 
                                 }
                             }
 
-
-                            IconButton(
-                                onClick =
-                                {
-                                    expandableState[index] = expandableState[index] != true
-                                },
+                            Box(
                                 modifier = Modifier
                                     .weight(1f)
                                     .rotate(rotateValue)
@@ -489,13 +553,21 @@ class DisplayTestVM @Inject constructor(private val resultsRepo: ResultsRepo) : 
                                         width = 1.dp,
                                         color = colorResource(borderColor),
                                         shape = CircleShape
-                                    )
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                IconButton(
+                                    onClick =
+                                    {
+                                        expandableState[index] = expandableState[index] != true
+                                    }
                             ) {
                                 Icon(
                                     Icons.Default.ArrowDropDown,
                                     contentDescription = "",
-                                    modifier = Modifier.size(25.dp)
+                                    modifier = Modifier.fillMaxSize()
                                 )
+                            }
                             }
 
                         }
@@ -521,7 +593,7 @@ class DisplayTestVM @Inject constructor(private val resultsRepo: ResultsRepo) : 
 
                                         1 -> SpeakerTestOptions(
                                             heightOfIt,
-                                            context = LocalContext.current
+                                            allTestResults
                                         )
 
                                         else -> {
@@ -567,19 +639,11 @@ class DisplayTestVM @Inject constructor(private val resultsRepo: ResultsRepo) : 
                         )
                     },
                     modifier = Modifier
-                        .clickable(
-                            enabled = true,
-                            onClick = {
-                                Toast
-                                    .makeText(context, "Clicked $index", Toast.LENGTH_SHORT)
-                                    .show()
-                            }
-                        )
                         .size(125.dp)
                         .padding(6.dp),
                     border = BorderStroke(1.5.dp, color = colorResource(borderColor)),
                     colors = CardDefaults.cardColors(
-                        containerColor = cardColor(index, allTestResults),
+                        containerColor = cardColorForDT(index, allTestResults),
                         contentColor = Color.Black
                     ),
                     enabled = true,
@@ -632,8 +696,9 @@ class DisplayTestVM @Inject constructor(private val resultsRepo: ResultsRepo) : 
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.P)
     @Composable
-    fun SpeakerTestOptions(height: Dp, context: Context) {
+    fun SpeakerTestOptions(height: Dp, allTestResults: Map<String, Boolean>) {
         LazyVerticalGrid(
             columns = GridCells.Fixed(3),
             Modifier.height(height)
@@ -673,26 +738,30 @@ class DisplayTestVM @Inject constructor(private val resultsRepo: ResultsRepo) : 
                 }
                 Card(
                     modifier = Modifier
-                        .clickable(
-                            enabled = true,
-                            onClick = {
-                                Toast
-                                    .makeText(context, "Clicked $index", Toast.LENGTH_SHORT)
-                                    .show()
-                            }
-                        )
                         .size(125.dp)
                         .padding(6.dp),
                     elevation = cardElevation(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = cardColorForST(index, allTestResults),
+                        contentColor = Color.Black
+                    ),
                     border = BorderStroke(1.5.dp, color = colorResource(borderColor))
                 ) {
                     Box(
                         contentAlignment = Alignment.Center,
-                        modifier = Modifier.fillMaxSize()
+                        modifier = Modifier
+                            .fillMaxSize()
                     ) {
                         Column(
                             modifier = Modifier
-                                .fillMaxSize(),
+                                .fillMaxSize()
+                                .clickable(
+                                    enabled = true,
+                                    onClick = {
+                                        btmSheetExpand.value = true
+                                        xId.intValue = index
+                                    }
+                                ),
                             verticalArrangement = Arrangement.Center,
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
@@ -711,5 +780,276 @@ class DisplayTestVM @Inject constructor(private val resultsRepo: ResultsRepo) : 
                 }
             }
         }
+        SpeakerBottomSheet()
     }
+
+    @Composable
+    @RequiresApi(Build.VERSION_CODES.P)
+    @OptIn(ExperimentalMaterial3Api::class)
+    private fun SpeakerBottomSheet() {
+        if (btmSheetExpand.value) {
+            ModalBottomSheet(
+                onDismissRequest = { btmSheetExpand.value = false },
+                shape = RoundedCornerShape(20.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(220.dp),
+                scrimColor = Color.Transparent,
+                sheetState = SheetState(
+                    skipPartiallyExpanded = true,
+                    skipHiddenState = false
+                ),
+                contentColor = Color.Green,
+                containerColor = colorResource(id = borderColor)
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    when (xId.intValue) {
+                        0 -> {
+                            MediaPlayerCtrl()
+                            TextToSpeakFn(LocalContext.current)
+                            Spacer(modifier = Modifier.height(10.dp))
+                            if (toShowBtn.value) {
+                                TextFn(text = yText.value, color = Color.Black, size = 24)
+                                Row {
+                                    Button(onClick = {
+                                        speakTestResult.value = true
+                                    }) {
+                                        Text(
+                                            text = "Yes",
+                                            fontSize = 16.sp,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                        if (speakTestResult.value) {
+                                            UpdateResultAfterTest(
+                                                context = LocalContext.current,
+                                                testName = speakTestName,
+                                                testResult = true
+                                            )
+                                            btmSheetExpand.value = false
+                                            speakTestResult.value = false
+                                        } else {
+                                            Log.d("speakTestResult", "speakTestResult.value is empty")
+                                        }
+                                    }
+                                    Spacer(modifier = Modifier.width(10.dp))
+                                    Button(onClick = {
+                                        btmSheetExpand.value = false
+                                        ttsStatus.value = false
+                                    }) {
+                                        Text(
+                                            text = "No",
+                                            fontSize = 16.sp,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+                                }
+                            } else {
+                                TextFn(text = xText.value, color = Color.Black, size = 24)
+                            }
+                        }
+
+                        else -> {
+                            Text(
+                                text = "Dummy ${xId.intValue}",
+                                fontSize = 22.sp,
+                                fontWeight = FontWeight.Bold,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.P)
+    @Composable
+    fun MediaPlayerCtrl() {
+        val context = LocalContext.current
+        val pitchValue = remember { mutableFloatStateOf(1f) }
+        val mediaPlayer = MediaPlayer.create(context, R.raw.alarm1)
+        val playbackParam = PlaybackParams()
+
+        LaunchedEffect(Unit) {
+            mediaPlayer.start()
+            insertResultBeforeTest(speakTestName)
+            timer.start()
+        }
+
+        DisposableEffect(Unit) {
+            onDispose {
+                mediaPlayer.pause()
+                timer.cancel()
+                pitchValue.floatValue = 1f
+                toShowBtn.value = false
+                ttsStatus.value = false
+            }
+        }
+
+        timer = object : CountDownTimer(10000, 1000) {
+            override fun onTick(millisUntilFinished: Long) {
+                if ((millisUntilFinished / 1000) % 2 == 0L) {
+                    pitchValue.floatValue += 1
+                    playbackParam.speed = 1f
+                    playbackParam.pitch = pitchValue.floatValue
+                    mediaPlayer.playbackParams = playbackParam
+                    Log.d("CurrentPitch", "${mediaPlayer.playbackParams.pitch}")
+                    toShowBtn.value = false
+                    ttsStatus.value = false
+                }
+            }
+
+            override fun onFinish() {
+                pitchValue.floatValue = 1f
+                mediaPlayer.pause()
+                ttsStatus.value = true
+                toShowBtn.value = true
+            }
+
+        }
+        mediaPlayer.setOnCompletionListener {
+            Log.d("MediaPlayerSetUp", "Completed")
+        }
+        mediaPlayer.setOnBufferingUpdateListener { mp, percent ->
+            Log.d("MediaPlayerSetUp", "Buffering $mp. $percent")
+        }
+        mediaPlayer.setOnDrmConfigHelper { drm ->
+            Log.d("MediaPlayerSetUp", "DrmConfig $drm")
+        }
+        mediaPlayer.setOnDrmPreparedListener { mp, status ->
+            Log.d("MediaPlayerSetUp", "DrmPrepared $mp $status")
+        }
+        mediaPlayer.setOnErrorListener { mp, what, extra ->
+            Log.d("MediaPlayerSetUp", "Error $mp $what $extra")
+            mediaPlayer.release()
+            false
+        }
+        mediaPlayer.setOnInfoListener { mp, what, extra ->
+            Log.d("MediaPlayerSetUp", "Info $mp $what $extra")
+            false
+        }
+        mediaPlayer.setOnSeekCompleteListener { scl ->
+            Log.d("MediaPlayerSetUp", "SeekComplete $scl")
+        }
+        mediaPlayer.setOnMediaTimeDiscontinuityListener { mp, mts ->
+            Log.d(
+                "MediaPlayerSetUp",
+                "MediaTimeDiscontinuity ${mp.isPlaying} ${mts.mediaClockRate}"
+            )
+        }
+    }
+
+    @Composable
+    private fun TextToSpeakFn(context: Context) {
+        lateinit var textToSpeech: TextToSpeech
+        if (ttsStatus.value) {
+            textToSpeech = TextToSpeech(context) { status ->
+                if (status == TextToSpeech.SUCCESS) {
+                    val speakResult =
+                        textToSpeech.setLanguage(Locale.getDefault())
+                    if (speakResult == TextToSpeech.LANG_MISSING_DATA || speakResult == TextToSpeech.LANG_NOT_SUPPORTED) {
+                        Log.d("textToSpeechStatus", "Language not supported..!")
+                    }
+                    textToSpeech.speak(
+                        yText.value,
+                        TextToSpeech.QUEUE_FLUSH,
+                        null,
+                        null
+                    )
+                }
+            }
+        }
+    }
+
+    /*@Composable
+    fun SpeechRecZ() {
+       val context = LocalContext.current
+       val recognizerIntent1 = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
+       val speechRecognizer = SpeechRecognizer.createSpeechRecognizer(
+           context
+       )
+       recognizerIntent1.putExtra(
+           RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+           RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
+       )
+       recognizerIntent1.putExtra(
+           RecognizerIntent.EXTRA_LANGUAGE,
+           Locale.getDefault()
+       )
+
+       speechRecognizer.setRecognitionListener(object :
+           RecognitionListener {
+
+           override fun onReadyForSpeech(params: Bundle?) {
+               Log.d("OnReadyForSpeech", "User Ready for speaking.")
+           }
+
+           override fun onBeginningOfSpeech() {
+               Log.d(
+                   "onBeginningOfSpeech",
+                   "The user has started to speak."
+               )
+           }
+
+           override fun onRmsChanged(rmsdB: Float) {
+               //   Log.d("OnRmsChanged", "Change in the level of sound")
+           }
+
+           override fun onBufferReceived(buffer: ByteArray?) {
+               Log.d(
+                   "OnBufferReceived",
+                   "More sound has been received."
+               )
+           }
+
+           override fun onEndOfSpeech() {
+               Log.d(
+                   "onEndOfSpeech",
+                   "Called after the user stops speaking."
+               )
+               speechRecognizer.stopListening()
+           }
+
+           override fun onError(error: Int) {
+               Log.d(
+                   "OnError",
+                   "An network or recognition error occurred."
+               )
+           }
+
+           override fun onResults(results: Bundle?) {
+               Log.d("Results", "Results")
+               val speechResults =
+                   results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+               if (!speechResults.isNullOrEmpty()) {
+                   speechRecognizer.stopListening()
+                   spText.value = speechResults[0].toString()
+                   Log.d(
+                       "Recognized_Text",
+                       "Current Value : ${speechResults[0].uppercase()}"
+                   )
+               }
+           }
+
+           override fun onPartialResults(partialResults: Bundle?) {
+               Log.d(
+                   "OnPartialResults",
+                   "Called when partial recognition results are available."
+               )
+           }
+
+           override fun onEvent(eventType: Int, params: Bundle?) {
+               Log.d(
+                   "OnEvent",
+                   "Reserved for adding future events $eventType"
+               )
+           }
+       })
+       speechRecognizer.startListening(recognizerIntent1)
+    }*/
+
 }
