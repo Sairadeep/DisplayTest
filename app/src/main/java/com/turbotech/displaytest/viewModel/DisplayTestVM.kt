@@ -8,6 +8,8 @@ import android.media.MediaPlayer
 import android.media.PlaybackParams
 import android.os.Build
 import android.os.CountDownTimer
+import android.os.VibrationEffect
+import android.os.Vibrator
 import android.speech.tts.TextToSpeech
 import android.util.Log
 import android.view.MotionEvent
@@ -94,6 +96,7 @@ import com.turbotech.displaytest.components.topAppBarColorCombo
 import com.turbotech.displaytest.model.DisplayEntities
 import com.turbotech.displaytest.repository.ResultsRepo
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -139,6 +142,7 @@ class DisplayTestVM @Inject constructor(private val resultsRepo: ResultsRepo) : 
     private val speakTestResult = mutableStateOf(false)
     private val ttsStatus = mutableStateOf(false)
     private val expandableState = mutableStateMapOf<Int, Boolean>()
+    private val vibrationTestResults = mutableStateOf(false)
 
     init {
         viewModelScope.launch {
@@ -449,7 +453,7 @@ class DisplayTestVM @Inject constructor(private val resultsRepo: ResultsRepo) : 
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.P)
+    @RequiresApi(Build.VERSION_CODES.S)
     @Composable
     fun HomePageDesign(
         navController: NavHostController,
@@ -696,7 +700,7 @@ class DisplayTestVM @Inject constructor(private val resultsRepo: ResultsRepo) : 
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.P)
+    @RequiresApi(Build.VERSION_CODES.S)
     @Composable
     fun SpeakerTestOptions(height: Dp, allTestResults: Map<String, Boolean>) {
         LazyVerticalGrid(
@@ -784,16 +788,20 @@ class DisplayTestVM @Inject constructor(private val resultsRepo: ResultsRepo) : 
     }
 
     @Composable
-    @RequiresApi(Build.VERSION_CODES.P)
+    @RequiresApi(Build.VERSION_CODES.S)
     @OptIn(ExperimentalMaterial3Api::class)
     private fun SpeakerBottomSheet() {
+        val context = LocalContext.current
+        val vibrator =
+            context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
         if (btmSheetExpand.value) {
             ModalBottomSheet(
                 onDismissRequest = { btmSheetExpand.value = false },
-                shape = RoundedCornerShape(20.dp),
+                shape = RoundedCornerShape(30.dp),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(220.dp),
+                    .height(150.dp)
+                    .padding(18.dp),
                 scrimColor = Color.Transparent,
                 sheetState = SheetState(
                     skipPartiallyExpanded = true,
@@ -804,7 +812,6 @@ class DisplayTestVM @Inject constructor(private val resultsRepo: ResultsRepo) : 
             ) {
                 Column(
                     modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     when (xId.intValue) {
@@ -832,7 +839,10 @@ class DisplayTestVM @Inject constructor(private val resultsRepo: ResultsRepo) : 
                                             btmSheetExpand.value = false
                                             speakTestResult.value = false
                                         } else {
-                                            Log.d("speakTestResult", "speakTestResult.value is empty")
+                                            Log.d(
+                                                "speakTestResult",
+                                                "speakTestResult.value is empty"
+                                            )
                                         }
                                     }
                                     Spacer(modifier = Modifier.width(10.dp))
@@ -852,16 +862,60 @@ class DisplayTestVM @Inject constructor(private val resultsRepo: ResultsRepo) : 
                             }
                         }
 
+                        1 -> {
+                            if (vibrationTestResults.value) {
+                                UpdateResultAfterTest(
+                                    context = LocalContext.current,
+                                    testName = vibrationTestName,
+                                    testResult = true
+                                )
+                            }
+                            TextFn(text = "Vibration Test", color = Color.Black, size = 24)
+                            VibrationCtrl(vibrator)
+                        }
+
                         else -> {
-                            Text(
-                                text = "Dummy ${xId.intValue}",
-                                fontSize = 22.sp,
-                                fontWeight = FontWeight.Bold,
-                                textAlign = TextAlign.Center
-                            )
+                            Column(
+                                modifier = Modifier.fillMaxSize(),
+                                verticalArrangement = Arrangement.Center,
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    text = "Dummy ${xId.intValue}",
+                                    fontSize = 22.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    textAlign = TextAlign.Start
+                                )
+                            }
                         }
                     }
                 }
+            }
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.Q)
+    @Composable
+    private fun VibrationCtrl(vibrator: Vibrator) {
+
+        LaunchedEffect(Unit) {
+            insertResultBeforeTest(vibrationTestName)
+            vibrator.vibrate(
+                VibrationEffect.createOneShot(
+                    5000,
+                    VibrationEffect.EFFECT_HEAVY_CLICK
+                )
+            )
+            delay(5800)
+            vibrationTestResults.value = true
+            delay(250)
+            btmSheetExpand.value = false
+        }
+
+        DisposableEffect(Unit) {
+            onDispose {
+                vibrator.cancel()
+                vibrationTestResults.value = false
             }
         }
     }

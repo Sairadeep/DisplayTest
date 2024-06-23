@@ -3,6 +3,8 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+
     <application
         android:name=".DisplayTestApp"
         android:allowBackup="true"
@@ -17,7 +19,6 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:label="@string/app_name"
             android:theme="@style/Theme.DisplayTest">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
