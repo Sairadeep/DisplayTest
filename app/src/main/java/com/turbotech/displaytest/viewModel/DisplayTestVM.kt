@@ -569,7 +569,8 @@ class DisplayTestVM @Inject constructor(private val resultsRepo: ResultsRepo) : 
                                 Icon(
                                     Icons.Default.ArrowDropDown,
                                     contentDescription = "",
-                                    modifier = Modifier.fillMaxSize()
+                                    modifier = Modifier.fillMaxSize(),
+                                    tint = Color.Black
                                 )
                             }
                             }
@@ -789,9 +790,11 @@ class DisplayTestVM @Inject constructor(private val resultsRepo: ResultsRepo) : 
 
     @Composable
     @RequiresApi(Build.VERSION_CODES.S)
+    @Suppress("DEPRECATION")
     @OptIn(ExperimentalMaterial3Api::class)
     private fun SpeakerBottomSheet() {
         val context = LocalContext.current
+//        As Context.VIBRATOR_SERVICE is deprecated from OS 12 (API Level 31), need to handle it.
         val vibrator =
             context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
         if (btmSheetExpand.value) {
