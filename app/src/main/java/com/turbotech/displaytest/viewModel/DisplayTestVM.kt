@@ -74,6 +74,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -468,24 +469,48 @@ class DisplayTestVM @Inject constructor(private val resultsRepo: ResultsRepo) : 
         navController: NavHostController,
         allTestResults: Map<String, Boolean>,
     ) {
-        val context = LocalContext.current
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(100.dp)
+                .padding(5.dp).clip(RoundedCornerShape(topEnd = 28.dp, bottomStart = 28.dp))
+                .background(Color.Cyan)
+        ) {
+            Row(verticalAlignment = Alignment.Top, modifier = Modifier.padding(5.dp)) {
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(3),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    items(count = 3) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(4.dp)
+                                .border(
+                                    width = 1.5.dp,
+                                    color = colorResource(id = borderColor),
+                                    shape = RoundedCornerShape(8.dp)
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(
+                                modifier = Modifier.size(75.dp),
+                                verticalArrangement = Arrangement.Center,
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                TextFn(text = "Hello", color = Color.Magenta, size = 16)
+                            }
+                        }
+                    }
+                }
+            }
+        }
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(top = 30.dp)
+                .padding(top = 7.dp)
         ) {
-            // Need to change this position to mic test
-            if (ContextCompat.checkSelfPermission(
-                    context,
-                    Manifest.permission.RECORD_AUDIO
-                ) != PackageManager.PERMISSION_GRANTED
-            ) {
-                ActivityCompat.requestPermissions(
-                    context as Activity,
-                    arrayOf(Manifest.permission.RECORD_AUDIO, Manifest.permission.CALL_PHONE),
-                    99
-                )
-            }
             items(count = 5) { index ->
                 val rotateValue by animateFloatAsState(
                     targetValue = if (expandableState[index] == true) 180f else 0f,
@@ -825,6 +850,7 @@ class DisplayTestVM @Inject constructor(private val resultsRepo: ResultsRepo) : 
                     modifier = Modifier.fillMaxSize(),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
+
                     /**
                      * Need to verify that the device volume isn't set to minimum or muted.
                      */
@@ -891,6 +917,20 @@ class DisplayTestVM @Inject constructor(private val resultsRepo: ResultsRepo) : 
                         }
 
                         2 -> {
+                            if (ContextCompat.checkSelfPermission(
+                                    context,
+                                    Manifest.permission.RECORD_AUDIO
+                                ) != PackageManager.PERMISSION_GRANTED
+                            ) {
+                                ActivityCompat.requestPermissions(
+                                    context as Activity,
+                                    arrayOf(
+                                        Manifest.permission.RECORD_AUDIO,
+                                        Manifest.permission.CALL_PHONE
+                                    ),
+                                    99
+                                )
+                            }
                             Text(
                                 text = "How are the things going? \n \n Speak out the above text",
                                 color = Color.Black,

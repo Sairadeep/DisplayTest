@@ -25,7 +25,7 @@ import com.turbotech.displaytest.components.topAppBarColorCombo
 import com.turbotech.displaytest.viewModel.DisplayTestVM
 import kotlinx.coroutines.delay
 
-@RequiresApi(Build.VERSION_CODES.P)
+@RequiresApi(Build.VERSION_CODES.S)
 @Composable
 fun HomePage(navController: NavHostController, displayTestVM: DisplayTestVM) {
 
