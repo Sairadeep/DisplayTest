@@ -794,7 +794,6 @@ class DisplayTestVM @Inject constructor(private val resultsRepo: ResultsRepo) : 
     @OptIn(ExperimentalMaterial3Api::class)
     private fun SpeakerBottomSheet() {
         val context = LocalContext.current
-//        As Context.VIBRATOR_SERVICE is deprecated from OS 12 (API Level 31), need to handle it.
         val vibrator =
             context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
         if (btmSheetExpand.value) {
@@ -872,6 +871,7 @@ class DisplayTestVM @Inject constructor(private val resultsRepo: ResultsRepo) : 
                                     testName = vibrationTestName,
                                     testResult = true
                                 )
+                                vibrationTestResults.value = false
                             }
                             TextFn(text = "Vibration Test", color = Color.Black, size = 24)
                             VibrationCtrl(vibrator)
@@ -897,7 +897,7 @@ class DisplayTestVM @Inject constructor(private val resultsRepo: ResultsRepo) : 
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.Q)
+    @RequiresApi(Build.VERSION_CODES.S)
     @Composable
     private fun VibrationCtrl(vibrator: Vibrator) {
 
