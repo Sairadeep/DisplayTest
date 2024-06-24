@@ -3,13 +3,19 @@ package com.turbotech.displaytest.viewModel
 import android.Manifest
 import android.app.Activity
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.media.MediaPlayer
 import android.media.PlaybackParams
+import android.media.RingtoneManager
 import android.os.Build
+import android.os.Bundle
 import android.os.CountDownTimer
 import android.os.VibrationEffect
 import android.os.Vibrator
+import android.speech.RecognitionListener
+import android.speech.RecognizerIntent
+import android.speech.SpeechRecognizer
 import android.speech.tts.TextToSpeech
 import android.util.Log
 import android.view.MotionEvent
@@ -143,6 +149,9 @@ class DisplayTestVM @Inject constructor(private val resultsRepo: ResultsRepo) : 
     private val ttsStatus = mutableStateOf(false)
     private val expandableState = mutableStateMapOf<Int, Boolean>()
     private val vibrationTestResults = mutableStateOf(false)
+    private val ringtoneTestResults = mutableStateOf(false)
+    private val alarmTestResults = mutableStateOf(false)
+    private val notificationTestResults = mutableStateOf(false)
 
     init {
         viewModelScope.launch {
@@ -802,7 +811,7 @@ class DisplayTestVM @Inject constructor(private val resultsRepo: ResultsRepo) : 
                 shape = RoundedCornerShape(30.dp),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(150.dp)
+                    .height(187.dp)
                     .padding(18.dp),
                 scrimColor = Color.Transparent,
                 sheetState = SheetState(
@@ -816,6 +825,10 @@ class DisplayTestVM @Inject constructor(private val resultsRepo: ResultsRepo) : 
                     modifier = Modifier.fillMaxSize(),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
+                    /**
+                     * Need to verify that the device volume isn't set to minimum or muted.
+                     */
+
                     when (xId.intValue) {
                         0 -> {
                             MediaPlayerCtrl()
@@ -877,6 +890,70 @@ class DisplayTestVM @Inject constructor(private val resultsRepo: ResultsRepo) : 
                             VibrationCtrl(vibrator)
                         }
 
+                        2 -> {
+                            Text(
+                                text = "How are the things going? \n \n Speak out the above text",
+                                color = Color.Black,
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Bold,
+                                textAlign = TextAlign.Center
+                            )
+                            // Will handle this later
+                            SpeechRecZ()
+                        }
+
+                        3 -> {
+                            if (ringtoneTestResults.value) {
+                                UpdateResultAfterTest(
+                                    context = context,
+                                    testName = ringtoneTestName,
+                                    testResult = true
+                                )
+                                ringtoneTestResults.value = false
+                            }
+                            TextFn(
+                                text = "Playing Ringtone...!",
+                                color = Color.Black,
+                                size = 22
+                            )
+                            RingtoneManager(context)
+                        }
+
+                        4 -> {
+                            if (alarmTestResults.value) {
+                                UpdateResultAfterTest(
+                                    context = context,
+                                    testName = alarmTestName,
+                                    testResult = true
+                                )
+                                alarmTestResults.value = false
+                            }
+                            TextFn(
+                                text = "Playing Alarm Tone...!",
+                                color = Color.Black,
+                                size = 22
+                            )
+                            RingtoneManager(context)
+                        }
+
+                        5 -> {
+                            if (notificationTestResults.value) {
+                                UpdateResultAfterTest(
+                                    context = context,
+                                    testName = notificationTestName,
+                                    testResult = true
+                                )
+                                notificationTestResults.value = false
+                            }
+
+                            TextFn(
+                                text = "Playing Notification Tone...!",
+                                color = Color.Black,
+                                size = 22
+                            )
+                            RingtoneManager(context)
+                        }
+
                         else -> {
                             Column(
                                 modifier = Modifier.fillMaxSize(),
@@ -895,6 +972,61 @@ class DisplayTestVM @Inject constructor(private val resultsRepo: ResultsRepo) : 
                 }
             }
         }
+    }
+
+    @Composable
+    private fun RingtoneManager(context: Context) {
+
+        val ringtoneType: Int = when (xId.intValue) {
+
+            3 -> RingtoneManager.TYPE_RINGTONE
+            4 -> RingtoneManager.TYPE_ALARM
+            5 -> RingtoneManager.TYPE_NOTIFICATION
+            else -> RingtoneManager.TYPE_ALL
+
+        }
+
+        val ringtoneUri =
+            RingtoneManager.getDefaultUri(ringtoneType)
+        val ringtone = RingtoneManager.getRingtone(context, ringtoneUri)
+
+        LaunchedEffect(Unit) {
+
+            when (xId.intValue) {
+
+                3 -> insertResultBeforeTest(ringtoneTestName)
+                4 -> insertResultBeforeTest(alarmTestName)
+                5 -> insertResultBeforeTest(notificationTestName)
+                else -> {
+                    Log.d("Current_Test", "No, insertion of data ${xId.intValue}")
+                }
+
+            }
+            ringtone.play()
+            delay(4000)
+            when (xId.intValue) {
+
+                3 -> ringtoneTestResults.value = true
+                4 -> alarmTestResults.value = true
+                5 -> notificationTestResults.value = true
+                else -> {
+                    Log.d("Current_Tone", "No, tone ${xId.intValue}")
+                }
+
+            }
+            delay(250)
+            btmSheetExpand.value = false
+        }
+
+        DisposableEffect(Unit) {
+            onDispose {
+                ringtone.stop()
+                ringtoneTestResults.value = false
+                alarmTestResults.value = false
+                notificationTestResults.value = false
+            }
+        }
+
     }
 
     @RequiresApi(Build.VERSION_CODES.S)
@@ -1022,7 +1154,7 @@ class DisplayTestVM @Inject constructor(private val resultsRepo: ResultsRepo) : 
         }
     }
 
-    /*@Composable
+    @Composable
     fun SpeechRecZ() {
        val context = LocalContext.current
        val recognizerIntent1 = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
@@ -1084,10 +1216,9 @@ class DisplayTestVM @Inject constructor(private val resultsRepo: ResultsRepo) : 
                    results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
                if (!speechResults.isNullOrEmpty()) {
                    speechRecognizer.stopListening()
-                   spText.value = speechResults[0].toString()
                    Log.d(
                        "Recognized_Text",
-                       "Current Value : ${speechResults[0].uppercase()}"
+                       "Current Value : ${speechResults[0]}"
                    )
                }
            }
@@ -1107,6 +1238,6 @@ class DisplayTestVM @Inject constructor(private val resultsRepo: ResultsRepo) : 
            }
        })
        speechRecognizer.startListening(recognizerIntent1)
-    }*/
+    }
 
 }
