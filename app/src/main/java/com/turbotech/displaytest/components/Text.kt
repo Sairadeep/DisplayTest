@@ -2,6 +2,7 @@ package com.turbotech.displaytest.components
 
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -19,4 +20,14 @@ fun TextFn(text: String, color: Color, size: Int) {
         color = color,
         textAlign = TextAlign.Center
     )
+}
+
+object Permission{
+
+    private val permission = mutableStateOf(false)
+    fun setPermission(){
+        permission.value = true
+    }
+
+    fun getPermission() = permission.value
 }

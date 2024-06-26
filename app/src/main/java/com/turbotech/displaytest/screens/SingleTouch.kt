@@ -18,6 +18,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.turbotech.displaytest.components.TopAppBarFn
 import com.turbotech.displaytest.viewModel.DisplayTestVM
 
 @Composable
@@ -29,7 +30,7 @@ fun SingleTouch(navController: NavController, displayTestVM: DisplayTestVM) {
 
     Scaffold(
         topBar = {
-            displayTestVM.DisplayTopAppBar(displayTestVM.singleTouchTestName,navController)
+            TopAppBarFn(displayTestVM.singleTouchTestName,navController)
         },
         bottomBar = {
             SingleTouchBottomBar(displayTestVM)
@@ -56,8 +57,6 @@ fun SingleTouch(navController: NavController, displayTestVM: DisplayTestVM) {
         }
     }
 }
-
-
 
 @Composable
 private fun SingleTouchBottomBar(displayTestVM: DisplayTestVM) {

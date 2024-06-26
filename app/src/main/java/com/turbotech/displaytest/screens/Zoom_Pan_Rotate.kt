@@ -10,8 +10,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavController
+import com.turbotech.displaytest.components.TopAppBarFn
 import com.turbotech.displaytest.viewModel.DisplayTestVM
-
 
 @Composable
 fun PinchToZoom(navController: NavController, displayTestVM: DisplayTestVM) {
@@ -24,7 +24,7 @@ fun PinchToZoom(navController: NavController, displayTestVM: DisplayTestVM) {
     Surface(modifier = Modifier.fillMaxSize()) {
         Scaffold(
             topBar = {
-                displayTestVM.DisplayTopAppBar(text = displayTestVM.pinchToZoomTestName, navController)
+                TopAppBarFn(text = displayTestVM.pinchToZoomTestName, navController)
             },
         ) {
             Column(
@@ -44,5 +44,3 @@ fun PinchToZoom(navController: NavController, displayTestVM: DisplayTestVM) {
         }
     }
 }
-
-

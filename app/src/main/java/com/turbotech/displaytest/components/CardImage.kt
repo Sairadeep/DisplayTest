@@ -15,7 +15,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun CardImage(id: Int) {
+fun DisplayCardImages(id: Int) {
     Image(
         painter = painterResource(id = id),
         contentDescription = "",
@@ -25,6 +25,36 @@ fun CardImage(id: Int) {
             .border(0.75.dp, color = Color.DarkGray, shape = CircleShape)
             .clip(CircleShape),
         alignment = Alignment.Center,
-        contentScale = ContentScale.Crop
+        contentScale = ContentScale.Fit
+    )
+}
+
+@Composable
+fun ConnectivityCardImages(id: Int) {
+    Image(
+        painter = painterResource(id = id),
+        contentDescription = "",
+        modifier = Modifier
+            .size(70.dp)
+            .padding(top = 3.dp)
+            .border(0.75.dp, color = Color.DarkGray, shape = CircleShape)
+            .clip(CircleShape),
+        alignment = Alignment.Center,
+        contentScale = ContentScale.Fit
+    )
+}
+
+@Composable
+fun SpeakerCardImages(id: Int) {
+    Image(
+        painter = painterResource(id = id),
+        contentDescription = "",
+        modifier = Modifier
+            .size(70.dp)
+            .padding(top = 3.dp)
+            .border(0.75.dp, color = Color.DarkGray, shape = CircleShape)
+            .clip(CircleShape),
+        alignment = Alignment.Center,
+        contentScale = ContentScale.Fit
     )
 }

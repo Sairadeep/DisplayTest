@@ -1,10 +1,7 @@
 package com.turbotech.displaytest.viewModel
 
-import android.Manifest
-import android.app.Activity
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.media.MediaPlayer
 import android.media.PlaybackParams
 import android.media.RingtoneManager
@@ -18,49 +15,21 @@ import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import android.speech.tts.TextToSpeech
 import android.util.Log
-import android.view.MotionEvent
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.collection.mutableIntListOf
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.SheetState
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -68,38 +37,21 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
-import androidx.navigation.NavHostController
-import androidx.wear.compose.material.Text
 import com.turbotech.displaytest.R
-import com.turbotech.displaytest.components.CardImage
-import com.turbotech.displaytest.components.IconBtnFn
 import com.turbotech.displaytest.components.TextFn
-import com.turbotech.displaytest.components.cardElevation
-import com.turbotech.displaytest.components.topAppBarColorCombo
 import com.turbotech.displaytest.model.DisplayEntities
 import com.turbotech.displaytest.repository.ResultsRepo
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -122,37 +74,31 @@ class DisplayTestVM @Inject constructor(private val resultsRepo: ResultsRepo) : 
     val singleTouchTestName: String = "Single_Touch_Test"
     val multiTouchTestName: String = "Multi_Touch_Test"
     val pinchToZoomTestName: String = "Pinch_To_Zoom_Test"
-    private val speakTestName: String = "Speaker_Test"
-    private val vibrationTestName: String = "Vibration_Test"
+    val speakTestName: String = "Speaker_Test"
+    val vibrationTestName: String = "Vibration_Test"
     private val micTestName: String = "Microphone_Test"
-    private val ringtoneTestName: String = "Ringtone_Test"
-    private val alarmTestName: String = "Alarm_Test"
-    private val notificationTestName: String = "Notification_Test"
+    val ringtoneTestName: String = "Ringtone_Test"
+    val alarmTestName: String = "Alarm_Test"
+    val notificationTestName: String = "Notification_Test"
+    private val wifiTestName: String = "Wifi_Test"
+    private val bluetoothTestName: String = "Bluetooth_Test"
+    private val locationTestName: String = "Location_Test"
     val boxState = mutableStateOf(false)
     val xPosition = mutableStateOf(0.dp)
     val yPosition = mutableStateOf(0.dp)
+    val xId = mutableIntStateOf(99)
     val noOfClicks = mutableIntStateOf(0)
     val noC = mutableIntListOf()
-    private val speakerImageId = mutableIntStateOf(0)
-    private val displayImageId = mutableIntStateOf(0)
-    private val cardText = mutableStateOf("Dummy")
-    private val xId = mutableIntStateOf(99)
-    private val heightOfIt = 250.dp
-    private val borderColor = R.color.orange
-    private val currentClicks = mutableIntStateOf(0)
-    private val releaseState = mutableStateOf(false)
-    private val btmSheetExpand = mutableStateOf(false)
+    val borderColor = R.color.orange
+    val btmSheetExpand = mutableStateOf(false)
+    val toShowBtn = mutableStateOf(false)
+    val yText = mutableStateOf("Did you hear the music with varied pitch?")
     private lateinit var timer: CountDownTimer
-    private val xText = mutableStateOf("Playing Music")
-    private val yText = mutableStateOf("Did you hear the music with varied pitch?")
-    private val toShowBtn = mutableStateOf(false)
-    private val speakTestResult = mutableStateOf(false)
-    private val ttsStatus = mutableStateOf(false)
-    private val expandableState = mutableStateMapOf<Int, Boolean>()
-    private val vibrationTestResults = mutableStateOf(false)
-    private val ringtoneTestResults = mutableStateOf(false)
-    private val alarmTestResults = mutableStateOf(false)
-    private val notificationTestResults = mutableStateOf(false)
+    val ttsStatus = mutableStateOf(false)
+    val vibrationTestResults = mutableStateOf(false)
+    val ringtoneTestResults = mutableStateOf(false)
+    val alarmTestResults = mutableStateOf(false)
+    val notificationTestResults = mutableStateOf(false)
 
     init {
         viewModelScope.launch {
@@ -319,132 +265,22 @@ class DisplayTestVM @Inject constructor(private val resultsRepo: ResultsRepo) : 
         }
     }
 
-    @Composable
-    @OptIn(ExperimentalMaterial3Api::class)
-    fun DisplayTopAppBar(text: String, navController: NavController) {
-        TopAppBar(
-            title = { TextFn(text = text, color = Color.White, size = 22) },
-            navigationIcon = {
-                IconBtnFn(navController = navController)
-            },
-            colors = topAppBarColorCombo(),
-            scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
-        )
-    }
-
-    fun releaseStateOnMotionEvent(motionEvent: MotionEvent) {
-        // Allows up to 5 Touches
-        currentClicks.intValue = motionEvent.pointerCount
-
-        when (motionEvent.action) {
-
-            MotionEvent.ACTION_DOWN -> {
-                releaseState.value = true
-            }
-
-            MotionEvent.ACTION_POINTER_DOWN -> {
-                releaseState.value = true
-            }
-
-            MotionEvent.ACTION_UP -> {
-                currentClicks.intValue -= 1
-            }
-
-            MotionEvent.ACTION_POINTER_UP -> {
-                currentClicks.intValue -= 1
-            }
-
-        }
-    }
-
-    @Composable
-    fun MultiTestResultDisplayText(navController: NavController) {
-        if (releaseState.value) {
-            TextFn(
-                text = "Multi Touch has ${currentClicks.intValue} touches",
-                color = Color.White,
-                size = 18
-            )
-            Log.d("currentClicks", "${currentClicks.intValue}")
-            if (currentClicks.intValue > 2) {
-                UpdateResultAfterTest(
-                    context = LocalContext.current,
-                    testName = multiTouchTestName,
-                    testResult = true
-                )
-                navController.navigate("HomePage")
-            }
-        }
-    }
-
-    private fun subPagesNavigation(
+    fun connectivityCardColors(
         index: Int,
-        navController: NavHostController,
-        context: Context,
-        allTestResults: Map<String, Boolean>
-    ) {
-        when (index) {
-
-            0 -> {
-                navController.navigate(route = "SwipeScreenTest")
-            }
-
-            1 -> {
-                if (allTestResults[swipeTestName] != null) {
-                    navController.navigate(route = "SingleTouch")
-                } else {
-                    Toast.makeText(
-                        context,
-                        "Please complete swipe screen test first",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-            }
-
-            2 -> {
-                if (allTestResults[singleTouchTestName] != null) {
-                    navController.navigate(route = "MultiTouch")
-                } else {
-                    Toast.makeText(
-                        context,
-                        "Please complete single touch test first",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-            }
-
-            3 -> {
-                if (allTestResults[multiTouchTestName] != null) {
-                    navController.navigate(route = "PinchToZoom")
-                } else {
-                    Toast.makeText(
-                        context,
-                        "Please complete multi touch test first",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-            }
-        }
-    }
-
-    private fun cardColorForDT(
-        index: Int,
-        allTestResults: Map<String, Boolean>
+        allTestResults: Map<String, Boolean>,
     ) = when {
-        index == 0 && allTestResults[swipeTestName] == true -> Color.Green
-        index == 0 && allTestResults[swipeTestName] == false -> Color.Red
-        index == 1 && allTestResults[singleTouchTestName] == true -> Color.Green
-        index == 1 && allTestResults[singleTouchTestName] == false -> Color.Red
-        index == 2 && allTestResults[multiTouchTestName] == true -> Color.Green
-        index == 2 && allTestResults[multiTouchTestName] == false -> Color.Red
-        index == 3 && allTestResults[pinchToZoomTestName] == true -> Color.Green
-        index == 3 && allTestResults[pinchToZoomTestName] == false -> Color.Red
-         else -> {Color.White}
+        index == 0 && allTestResults[wifiTestName] == true -> Color.Green
+        index == 1 && allTestResults[bluetoothTestName] == true -> Color.Green
+        index == 1 && allTestResults[bluetoothTestName] == false -> Color.Red
+        index == 2 && allTestResults[locationTestName] == true -> Color.Green
+        index == 2 && allTestResults[locationTestName] == false -> Color.Red
+        index == 0 && allTestResults[wifiTestName] == false -> Color.Red
+        else -> Color.White
     }
 
-    private fun cardColorForST(
+    fun cardColorForST(
         index: Int,
-        allTestResults: Map<String, Boolean>
+        allTestResults: Map<String, Boolean>,
     ) = when {
         index == 0 && allTestResults[speakTestName] == true -> Color.Green
         index == 0 && allTestResults[speakTestName] == false -> Color.Red
@@ -463,559 +299,8 @@ class DisplayTestVM @Inject constructor(private val resultsRepo: ResultsRepo) : 
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.S)
     @Composable
-    fun HomePageDesign(
-        navController: NavHostController,
-        allTestResults: Map<String, Boolean>,
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(100.dp)
-                .padding(5.dp).clip(RoundedCornerShape(topEnd = 28.dp, bottomStart = 28.dp))
-                .background(Color.Cyan)
-        ) {
-            Row(verticalAlignment = Alignment.Top, modifier = Modifier.padding(5.dp)) {
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(3),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    items(count = 3) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(4.dp)
-                                .border(
-                                    width = 1.5.dp,
-                                    color = colorResource(id = borderColor),
-                                    shape = RoundedCornerShape(8.dp)
-                                ),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Column(
-                                modifier = Modifier.size(75.dp),
-                                verticalArrangement = Arrangement.Center,
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                TextFn(text = "Hello", color = Color.Magenta, size = 16)
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(top = 7.dp)
-        ) {
-            items(count = 5) { index ->
-                val rotateValue by animateFloatAsState(
-                    targetValue = if (expandableState[index] == true) 180f else 0f,
-                    label = "Rotate Arrow"
-                )
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(2.dp)
-                        .border(1.5.dp, Color.Black, shape = RoundedCornerShape(12.dp))
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(10.dp),
-                        verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            when (index) {
-                                0 -> {
-                                    Text(
-                                        text = "Display Check",
-                                        color = Color.Black,
-                                        fontSize = 22.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        modifier = Modifier.weight(6f)
-                                    )
-                                }
-
-                                1 -> {
-                                    Text(
-                                        text = "Speaker Check",
-                                        color = Color.Black,
-                                        fontSize = 22.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        modifier = Modifier.weight(6f)
-                                    )
-                                }
-
-                                2 -> {
-                                    Text(
-                                        text = "Connectivity Test",
-                                        color = Color.Black,
-                                        fontSize = 22.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        modifier = Modifier.weight(6f)
-                                    )
-                                }
-
-                                3 -> {
-                                    Text(
-                                        text = "Sensor Test",
-                                        color = Color.Black,
-                                        fontSize = 22.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        modifier = Modifier.weight(6f)
-                                    )
-                                }
-
-                                else -> {
-                                    Text(
-                                        text = "Camera Test",
-                                        color = Color.Black,
-                                        fontSize = 22.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        modifier = Modifier.weight(6f)
-                                    )
-                                }
-                            }
-
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .rotate(rotateValue)
-                                    .background(color = Color.LightGray, shape = CircleShape)
-                                    .border(
-                                        width = 1.dp,
-                                        color = colorResource(borderColor),
-                                        shape = CircleShape
-                                    ),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                IconButton(
-                                    onClick =
-                                    {
-                                        expandableState[index] = expandableState[index] != true
-                                    }
-                            ) {
-                                Icon(
-                                    Icons.Default.ArrowDropDown,
-                                    contentDescription = "",
-                                    modifier = Modifier.fillMaxSize(),
-                                    tint = Color.Black
-                                )
-                            }
-                            }
-
-                        }
-                        expandableState[index]?.let {
-                            AnimatedVisibility(visible = it) {
-                                Column(
-                                    modifier = Modifier
-                                        .padding(top = 5.dp)
-                                        .border(
-                                            width = 1.dp,
-                                            color = colorResource(id = borderColor),
-                                            shape = RoundedCornerShape(12.dp),
-                                        )
-                                ) {
-                                    when (index) {
-                                        0 -> {
-                                            DisplayTestOptions(
-                                                navController = navController,
-                                                allTestResults = allTestResults,
-                                                height = heightOfIt
-                                            )
-                                        }
-
-                                        1 -> SpeakerTestOptions(
-                                            heightOfIt,
-                                            allTestResults
-                                        )
-
-                                        else -> {
-                                            TextFn(
-                                                text = "No cards available",
-                                                color = Color.Black,
-                                                size = 16
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-
-    @Composable
-    @OptIn(ExperimentalMaterial3Api::class)
-    fun DisplayTestOptions(
-        navController: NavHostController,
-        allTestResults: Map<String, Boolean>,
-        height: Dp
-    ) {
-        val itemText = remember { mutableStateOf("Dummy") }
-        val context = LocalContext.current
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(3),
-            modifier = Modifier
-                .height(height)
-        ) {
-            items(count = 4) { index ->
-                Card(
-                    onClick = {
-                        subPagesNavigation(
-                            index,
-                            navController,
-                            context,
-                            allTestResults
-                        )
-                    },
-                    modifier = Modifier
-                        .size(125.dp)
-                        .padding(6.dp),
-                    border = BorderStroke(1.5.dp, color = colorResource(borderColor)),
-                    colors = CardDefaults.cardColors(
-                        containerColor = cardColorForDT(index, allTestResults),
-                        contentColor = Color.Black
-                    ),
-                    enabled = true,
-                    elevation = cardElevation()
-                ) {
-                    Box(
-                        contentAlignment = Alignment.Center,
-                        modifier = Modifier
-                            .fillMaxSize()
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxSize(),
-                            verticalArrangement = Arrangement.Center,
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            when (index) {
-                                0 -> {
-                                    displayImageId.intValue = R.drawable.swipe
-                                    itemText.value = "Swipe"
-                                }
-
-                                1 -> {
-                                    displayImageId.intValue = R.drawable.singletouch
-                                    itemText.value = "Single Touch"
-                                }
-
-                                2 -> {
-                                    displayImageId.intValue = R.drawable.multitouch
-                                    itemText.value = "Multi Touch"
-                                }
-
-                                3 -> {
-                                    displayImageId.intValue = R.drawable.pinch
-                                    itemText.value = "Pinch"
-                                }
-                            }
-                            Row {
-                                CardImage(id = displayImageId.intValue)
-                            }
-                            Spacer(modifier = Modifier.height(7.dp))
-
-                            Row {
-                                TextFn(text = itemText.value, color = Color.Black, size = 16)
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    @RequiresApi(Build.VERSION_CODES.S)
-    @Composable
-    fun SpeakerTestOptions(height: Dp, allTestResults: Map<String, Boolean>) {
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(3),
-            Modifier.height(height)
-        ) {
-            items(count = 6) { index ->
-                when (index) {
-                    0 -> {
-                        speakerImageId.intValue = R.drawable.speaker1
-                        cardText.value = "Speaker"
-                    }
-
-                    1 -> {
-                        speakerImageId.intValue = R.drawable.vibration
-                        cardText.value = "Vibration"
-                    }
-
-                    2 -> {
-                        speakerImageId.intValue = R.drawable.mic_24
-                        cardText.value = "Microphone"
-                    }
-
-                    3 -> {
-                        speakerImageId.intValue = R.drawable.ringtone
-                        cardText.value = "Ringtone"
-                    }
-
-                    4 -> {
-                        speakerImageId.intValue = R.drawable.alarm_on_24
-                        cardText.value = "Alarm"
-                    }
-
-                    else -> {
-                        speakerImageId.intValue = R.drawable.notifications_24
-                        cardText.value = "Notification"
-                    }
-
-                }
-                Card(
-                    modifier = Modifier
-                        .size(125.dp)
-                        .padding(6.dp),
-                    elevation = cardElevation(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = cardColorForST(index, allTestResults),
-                        contentColor = Color.Black
-                    ),
-                    border = BorderStroke(1.5.dp, color = colorResource(borderColor))
-                ) {
-                    Box(
-                        contentAlignment = Alignment.Center,
-                        modifier = Modifier
-                            .fillMaxSize()
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .clickable(
-                                    enabled = true,
-                                    onClick = {
-                                        btmSheetExpand.value = true
-                                        xId.intValue = index
-                                    }
-                                ),
-                            verticalArrangement = Arrangement.Center,
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-
-                            Row {
-                                CardImage(speakerImageId.intValue)
-                            }
-
-                            Spacer(modifier = Modifier.height(7.dp))
-
-                            Row {
-                                TextFn(text = cardText.value, color = Color.Black, size = 16)
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        SpeakerBottomSheet()
-    }
-
-    @Composable
-    @RequiresApi(Build.VERSION_CODES.S)
-    @Suppress("DEPRECATION")
-    @OptIn(ExperimentalMaterial3Api::class)
-    private fun SpeakerBottomSheet() {
-        val context = LocalContext.current
-        val vibrator =
-            context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
-        if (btmSheetExpand.value) {
-            ModalBottomSheet(
-                onDismissRequest = { btmSheetExpand.value = false },
-                shape = RoundedCornerShape(30.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(187.dp)
-                    .padding(18.dp),
-                scrimColor = Color.Transparent,
-                sheetState = SheetState(
-                    skipPartiallyExpanded = true,
-                    skipHiddenState = false
-                ),
-                contentColor = Color.Green,
-                containerColor = colorResource(id = borderColor)
-            ) {
-                Column(
-                    modifier = Modifier.fillMaxSize(),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-
-                    /**
-                     * Need to verify that the device volume isn't set to minimum or muted.
-                     */
-
-                    when (xId.intValue) {
-                        0 -> {
-                            MediaPlayerCtrl()
-                            TextToSpeakFn(LocalContext.current)
-                            Spacer(modifier = Modifier.height(10.dp))
-                            if (toShowBtn.value) {
-                                TextFn(text = yText.value, color = Color.Black, size = 24)
-                                Row {
-                                    Button(onClick = {
-                                        speakTestResult.value = true
-                                    }) {
-                                        Text(
-                                            text = "Yes",
-                                            fontSize = 16.sp,
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                        if (speakTestResult.value) {
-                                            UpdateResultAfterTest(
-                                                context = LocalContext.current,
-                                                testName = speakTestName,
-                                                testResult = true
-                                            )
-                                            btmSheetExpand.value = false
-                                            speakTestResult.value = false
-                                        } else {
-                                            Log.d(
-                                                "speakTestResult",
-                                                "speakTestResult.value is empty"
-                                            )
-                                        }
-                                    }
-                                    Spacer(modifier = Modifier.width(10.dp))
-                                    Button(onClick = {
-                                        btmSheetExpand.value = false
-                                        ttsStatus.value = false
-                                    }) {
-                                        Text(
-                                            text = "No",
-                                            fontSize = 16.sp,
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                    }
-                                }
-                            } else {
-                                TextFn(text = xText.value, color = Color.Black, size = 24)
-                            }
-                        }
-
-                        1 -> {
-                            if (vibrationTestResults.value) {
-                                UpdateResultAfterTest(
-                                    context = LocalContext.current,
-                                    testName = vibrationTestName,
-                                    testResult = true
-                                )
-                                vibrationTestResults.value = false
-                            }
-                            TextFn(text = "Vibration Test", color = Color.Black, size = 24)
-                            VibrationCtrl(vibrator)
-                        }
-
-                        2 -> {
-                            if (ContextCompat.checkSelfPermission(
-                                    context,
-                                    Manifest.permission.RECORD_AUDIO
-                                ) != PackageManager.PERMISSION_GRANTED
-                            ) {
-                                ActivityCompat.requestPermissions(
-                                    context as Activity,
-                                    arrayOf(
-                                        Manifest.permission.RECORD_AUDIO,
-                                        Manifest.permission.CALL_PHONE
-                                    ),
-                                    99
-                                )
-                            }
-                            Text(
-                                text = "How are the things going? \n \n Speak out the above text",
-                                color = Color.Black,
-                                fontSize = 20.sp,
-                                fontWeight = FontWeight.Bold,
-                                textAlign = TextAlign.Center
-                            )
-                            // Will handle this later
-                            SpeechRecZ()
-                        }
-
-                        3 -> {
-                            if (ringtoneTestResults.value) {
-                                UpdateResultAfterTest(
-                                    context = context,
-                                    testName = ringtoneTestName,
-                                    testResult = true
-                                )
-                                ringtoneTestResults.value = false
-                            }
-                            TextFn(
-                                text = "Playing Ringtone...!",
-                                color = Color.Black,
-                                size = 22
-                            )
-                            RingtoneManager(context)
-                        }
-
-                        4 -> {
-                            if (alarmTestResults.value) {
-                                UpdateResultAfterTest(
-                                    context = context,
-                                    testName = alarmTestName,
-                                    testResult = true
-                                )
-                                alarmTestResults.value = false
-                            }
-                            TextFn(
-                                text = "Playing Alarm Tone...!",
-                                color = Color.Black,
-                                size = 22
-                            )
-                            RingtoneManager(context)
-                        }
-
-                        5 -> {
-                            if (notificationTestResults.value) {
-                                UpdateResultAfterTest(
-                                    context = context,
-                                    testName = notificationTestName,
-                                    testResult = true
-                                )
-                                notificationTestResults.value = false
-                            }
-
-                            TextFn(
-                                text = "Playing Notification Tone...!",
-                                color = Color.Black,
-                                size = 22
-                            )
-                            RingtoneManager(context)
-                        }
-
-                        else -> {
-                            Column(
-                                modifier = Modifier.fillMaxSize(),
-                                verticalArrangement = Arrangement.Center,
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Text(
-                                    text = "Dummy ${xId.intValue}",
-                                    fontSize = 22.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    textAlign = TextAlign.Start
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    @Composable
-    private fun RingtoneManager(context: Context) {
+    fun RingtoneManager(context: Context) {
 
         val ringtoneType: Int = when (xId.intValue) {
 
@@ -1071,7 +356,7 @@ class DisplayTestVM @Inject constructor(private val resultsRepo: ResultsRepo) : 
 
     @RequiresApi(Build.VERSION_CODES.S)
     @Composable
-    private fun VibrationCtrl(vibrator: Vibrator) {
+    fun VibrationCtrl(vibrator: Vibrator) {
 
         LaunchedEffect(Unit) {
             insertResultBeforeTest(vibrationTestName)
@@ -1173,7 +458,7 @@ class DisplayTestVM @Inject constructor(private val resultsRepo: ResultsRepo) : 
     }
 
     @Composable
-    private fun TextToSpeakFn(context: Context) {
+    fun TextToSpeakFn(context: Context) {
         lateinit var textToSpeech: TextToSpeech
         if (ttsStatus.value) {
             textToSpeech = TextToSpeech(context) { status ->
@@ -1256,10 +541,10 @@ class DisplayTestVM @Inject constructor(private val resultsRepo: ResultsRepo) : 
                    results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
                if (!speechResults.isNullOrEmpty()) {
                    speechRecognizer.stopListening()
-                   Log.d(
+                   /*Log.d(
                        "Recognized_Text",
                        "Current Value : ${speechResults[0]}"
-                   )
+                   )*/
                }
            }
 
@@ -1279,5 +564,4 @@ class DisplayTestVM @Inject constructor(private val resultsRepo: ResultsRepo) : 
        })
        speechRecognizer.startListening(recognizerIntent1)
     }
-
 }
