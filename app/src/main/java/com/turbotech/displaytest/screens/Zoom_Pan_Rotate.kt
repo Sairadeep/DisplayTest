@@ -11,20 +11,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavController
 import com.turbotech.displaytest.components.TopAppBarFn
-import com.turbotech.displaytest.viewModel.DisplayTestVM
+import com.turbotech.displaytest.viewModel.HRViewModel
 
 @Composable
-fun PinchToZoom(navController: NavController, displayTestVM: DisplayTestVM) {
+fun PinchToZoom(navController: NavController, HRViewModel: HRViewModel) {
 
     val context = LocalContext.current
     LaunchedEffect(Unit) {
-        displayTestVM.insertResultBeforeTest(displayTestVM.pinchToZoomTestName)
+        HRViewModel.insertResultBeforeTest(HRViewModel.pinchToZoomTestName)
     }
 
     Surface(modifier = Modifier.fillMaxSize()) {
         Scaffold(
             topBar = {
-                TopAppBarFn(text = displayTestVM.pinchToZoomTestName, navController)
+                TopAppBarFn(text = HRViewModel.pinchToZoomTestName, navController)
             },
         ) {
             Column(
@@ -32,10 +32,10 @@ fun PinchToZoom(navController: NavController, displayTestVM: DisplayTestVM) {
                     .fillMaxSize()
                     .padding(it)
             ) {
-                if (displayTestVM.zoomTransformableState()) {
-                    displayTestVM.UpdateResultAfterTest(
+                if (HRViewModel.zoomTransformableState()) {
+                    HRViewModel.UpdateResultAfterTest(
                         context = context,
-                        testName = displayTestVM.pinchToZoomTestName,
+                        testName = HRViewModel.pinchToZoomTestName,
                         testResult = true
                     )
                     navController.navigate("HomePage")

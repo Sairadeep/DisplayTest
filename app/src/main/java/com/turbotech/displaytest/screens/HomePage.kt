@@ -1,6 +1,7 @@
 package com.turbotech.displaytest.screens
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
@@ -79,13 +80,13 @@ import com.turbotech.displaytest.components.SpeakerCardImages
 import com.turbotech.displaytest.components.TextFn
 import com.turbotech.displaytest.components.cardElevation
 import com.turbotech.displaytest.components.topAppBarColorCombo
-import com.turbotech.displaytest.viewModel.DisplayTestVM
+import com.turbotech.displaytest.viewModel.HRViewModel
 import kotlinx.coroutines.delay
 
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
 @Composable
-fun HomePage(navController: NavHostController, displayTestVM: DisplayTestVM) {
-    val allTestResults = displayTestVM.getAllTestResults()
+fun HomePage(navController: NavHostController, HRViewModel: HRViewModel) {
+    val allTestResults = HRViewModel.getAllTestResults()
 
     LaunchedEffect(Unit) {
         delay(1000)
@@ -107,7 +108,7 @@ fun HomePage(navController: NavHostController, displayTestVM: DisplayTestVM) {
                 HomePageDesign(
                     navController = navController,
                     allTestResults = allTestResults,
-                    displayTestVM = displayTestVM
+                    HRViewModel = HRViewModel
                 )
             }
         }
@@ -119,7 +120,7 @@ fun HomePage(navController: NavHostController, displayTestVM: DisplayTestVM) {
 fun HomePageDesign(
     navController: NavHostController,
     allTestResults: Map<String, Boolean>,
-    displayTestVM: DisplayTestVM
+    HRViewModel: HRViewModel
 ) {
     val expandableState = remember { mutableStateMapOf<Int, Boolean>() }
     val heightOfIt = 250.dp
@@ -144,7 +145,7 @@ fun HomePageDesign(
                             .padding(4.dp)
                             .border(
                                 width = 1.5.dp,
-                                color = colorResource(id = displayTestVM.borderColor),
+                                color = colorResource(id = HRViewModel.borderColor),
                                 shape = RoundedCornerShape(8.dp)
                             ),
                         contentAlignment = Alignment.Center
@@ -244,7 +245,7 @@ fun HomePageDesign(
                                 .background(color = Color.LightGray, shape = CircleShape)
                                 .border(
                                     width = 1.dp,
-                                    color = colorResource(displayTestVM.borderColor),
+                                    color = colorResource(HRViewModel.borderColor),
                                     shape = CircleShape
                                 ),
                             contentAlignment = Alignment.Center
@@ -271,7 +272,7 @@ fun HomePageDesign(
                                     .padding(top = 5.dp)
                                     .border(
                                         width = 1.dp,
-                                        color = colorResource(id = displayTestVM.borderColor),
+                                        color = colorResource(id = HRViewModel.borderColor),
                                         shape = RoundedCornerShape(12.dp),
                                     )
                             ) {
@@ -281,21 +282,21 @@ fun HomePageDesign(
                                             navController = navController,
                                             allTestResults = allTestResults,
                                             height = heightOfIt,
-                                            displayTestVM = displayTestVM
+                                            HRViewModel = HRViewModel
                                         )
                                     }
 
                                     1 -> SpeakerTestOptions(
                                         heightOfIt,
                                         allTestResults,
-                                        displayTestVM
+                                        HRViewModel
                                     )
 
                                     2 -> {
                                         ConnectivityOptions(
                                             navController,
                                             allTestResults,
-                                            displayTestVM
+                                            HRViewModel
                                         )
                                     }
 
@@ -332,7 +333,7 @@ fun DisplayTestOptions(
     navController: NavHostController,
     allTestResults: Map<String, Boolean>,
     height: Dp,
-    displayTestVM: DisplayTestVM
+    HRViewModel: HRViewModel
 ) {
     val itemText = remember { mutableStateOf("Dummy") }
     val context = LocalContext.current
@@ -350,15 +351,15 @@ fun DisplayTestOptions(
                         navController,
                         context,
                         allTestResults,
-                        displayTestVM
+                        HRViewModel
                     )
                 },
                 modifier = Modifier
                     .size(125.dp)
                     .padding(6.dp),
-                border = BorderStroke(1.5.dp, color = colorResource(displayTestVM.borderColor)),
+                border = BorderStroke(1.5.dp, color = colorResource(HRViewModel.borderColor)),
                 colors = CardDefaults.cardColors(
-                    containerColor = cardColorForDT(index, allTestResults, displayTestVM),
+                    containerColor = cardColorForDT(index, allTestResults, HRViewModel),
                     contentColor = Color.Black
                 ),
                 enabled = true,
@@ -415,16 +416,16 @@ fun DisplayTestOptions(
 private fun cardColorForDT(
     index: Int,
     allTestResults: Map<String, Boolean>,
-    displayTestVM: DisplayTestVM
+    HRViewModel: HRViewModel
 ) = when {
-    index == 0 && allTestResults[displayTestVM.swipeTestName] == true -> Color.Green
-    index == 0 && allTestResults[displayTestVM.swipeTestName] == false -> Color.Red
-    index == 1 && allTestResults[displayTestVM.singleTouchTestName] == true -> Color.Green
-    index == 1 && allTestResults[displayTestVM.singleTouchTestName] == false -> Color.Red
-    index == 2 && allTestResults[displayTestVM.multiTouchTestName] == true -> Color.Green
-    index == 2 && allTestResults[displayTestVM.multiTouchTestName] == false -> Color.Red
-    index == 3 && allTestResults[displayTestVM.pinchToZoomTestName] == true -> Color.Green
-    index == 3 && allTestResults[displayTestVM.pinchToZoomTestName] == false -> Color.Red
+    index == 0 && allTestResults[HRViewModel.swipeTestName] == true -> Color.Green
+    index == 0 && allTestResults[HRViewModel.swipeTestName] == false -> Color.Red
+    index == 1 && allTestResults[HRViewModel.singleTouchTestName] == true -> Color.Green
+    index == 1 && allTestResults[HRViewModel.singleTouchTestName] == false -> Color.Red
+    index == 2 && allTestResults[HRViewModel.multiTouchTestName] == true -> Color.Green
+    index == 2 && allTestResults[HRViewModel.multiTouchTestName] == false -> Color.Red
+    index == 3 && allTestResults[HRViewModel.pinchToZoomTestName] == true -> Color.Green
+    index == 3 && allTestResults[HRViewModel.pinchToZoomTestName] == false -> Color.Red
     else -> {
         Color.White
     }
@@ -435,7 +436,7 @@ private fun subPagesNavigation(
     navController: NavHostController,
     context: Context,
     allTestResults: Map<String, Boolean>,
-    displayTestVM: DisplayTestVM
+    HRViewModel: HRViewModel
 ) {
     when (index) {
 
@@ -444,7 +445,7 @@ private fun subPagesNavigation(
         }
 
         1 -> {
-            if (allTestResults[displayTestVM.swipeTestName] != null) {
+            if (allTestResults[HRViewModel.swipeTestName] != null) {
                 navController.navigate(route = "SingleTouch")
             } else {
                 Toast.makeText(
@@ -456,7 +457,7 @@ private fun subPagesNavigation(
         }
 
         2 -> {
-            if (allTestResults[displayTestVM.singleTouchTestName] != null) {
+            if (allTestResults[HRViewModel.singleTouchTestName] != null) {
                 navController.navigate(route = "MultiTouch")
             } else {
                 Toast.makeText(
@@ -468,7 +469,7 @@ private fun subPagesNavigation(
         }
 
         3 -> {
-            if (allTestResults[displayTestVM.multiTouchTestName] != null) {
+            if (allTestResults[HRViewModel.multiTouchTestName] != null) {
                 navController.navigate(route = "PinchToZoom")
             } else {
                 Toast.makeText(
@@ -486,7 +487,7 @@ private fun subPagesNavigation(
 fun SpeakerTestOptions(
     height: Dp,
     allTestResults: Map<String, Boolean>,
-    displayTestVM: DisplayTestVM
+    HRViewModel: HRViewModel
 ) {
     val speakerImageId = remember { mutableIntStateOf(0) }
     val speakerCardText = remember { mutableStateOf("Dummy") }
@@ -534,10 +535,10 @@ fun SpeakerTestOptions(
                     .padding(6.dp),
                 elevation = cardElevation(),
                 colors = CardDefaults.cardColors(
-                    containerColor = displayTestVM.cardColorForST(spoIndex, allTestResults),
+                    containerColor = HRViewModel.cardColorForST(spoIndex, allTestResults),
                     contentColor = Color.Black
                 ),
-                border = BorderStroke(1.5.dp, color = colorResource(displayTestVM.borderColor))
+                border = BorderStroke(1.5.dp, color = colorResource(HRViewModel.borderColor))
             ) {
                 Box(
                     contentAlignment = Alignment.Center,
@@ -550,8 +551,8 @@ fun SpeakerTestOptions(
                             .clickable(
                                 enabled = true,
                                 onClick = {
-                                    displayTestVM.btmSheetExpand.value = true
-                                    displayTestVM.xId.intValue = spoIndex
+                                    HRViewModel.btmSheetExpand.value = true
+                                    HRViewModel.xId.intValue = spoIndex
                                 }
                             ),
                         verticalArrangement = Arrangement.Center,
@@ -572,7 +573,7 @@ fun SpeakerTestOptions(
             }
         }
     }
-    SpeakerBottomSheet(displayTestVM)
+    SpeakerBottomSheet(HRViewModel)
 }
 
 @Composable
@@ -580,16 +581,16 @@ fun SpeakerTestOptions(
 @Suppress("DEPRECATION")
 @OptIn(ExperimentalMaterial3Api::class)
 fun SpeakerBottomSheet(
-    displayTestVM: DisplayTestVM
+    HRViewModel: HRViewModel
 ) {
     val context = LocalContext.current
     val speakTestResult = remember { mutableStateOf(false) }
     val xText = remember { mutableStateOf("Playing Music") }
     val vibrator =
         context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
-    if (displayTestVM.btmSheetExpand.value) {
+    if (HRViewModel.btmSheetExpand.value) {
         ModalBottomSheet(
-            onDismissRequest = { displayTestVM.btmSheetExpand.value = false },
+            onDismissRequest = { HRViewModel.btmSheetExpand.value = false },
             shape = RoundedCornerShape(30.dp),
             modifier = Modifier
                 .fillMaxWidth()
@@ -601,7 +602,7 @@ fun SpeakerBottomSheet(
                 skipHiddenState = false
             ),
             contentColor = Color.Green,
-            containerColor = colorResource(id = displayTestVM.borderColor)
+            containerColor = colorResource(id = HRViewModel.borderColor)
         ) {
             Column(
                 modifier = Modifier.fillMaxSize(),
@@ -610,13 +611,13 @@ fun SpeakerBottomSheet(
                 /**
                  * Need to verify that the device volume isn't set to minimum or muted.
                  */
-                when (displayTestVM.xId.intValue) {
+                when (HRViewModel.xId.intValue) {
                     0 -> {
-                        displayTestVM.MediaPlayerCtrl()
-                        displayTestVM.TextToSpeakFn(context)
+                        HRViewModel.MediaPlayerCtrl()
+                        HRViewModel.TextToSpeakFn(context)
                         Spacer(modifier = Modifier.height(10.dp))
-                        if (displayTestVM.toShowBtn.value) {
-                            TextFn(text = displayTestVM.yText.value, color = Color.Black, size = 24)
+                        if (HRViewModel.toShowBtn.value) {
+                            TextFn(text = HRViewModel.yText.value, color = Color.Black, size = 24)
                             Row {
                                 Button(onClick = {
                                     speakTestResult.value = true
@@ -627,12 +628,12 @@ fun SpeakerBottomSheet(
                                         fontWeight = FontWeight.Bold
                                     )
                                     if (speakTestResult.value) {
-                                        displayTestVM.UpdateResultAfterTest(
+                                        HRViewModel.UpdateResultAfterTest(
                                             context = LocalContext.current,
-                                            testName = displayTestVM.speakTestName,
+                                            testName = HRViewModel.speakTestName,
                                             testResult = true
                                         )
-                                        displayTestVM.btmSheetExpand.value = false
+                                        HRViewModel.btmSheetExpand.value = false
                                         speakTestResult.value = false
                                     } else {
                                         Log.d(
@@ -643,8 +644,8 @@ fun SpeakerBottomSheet(
                                 }
                                 Spacer(modifier = Modifier.width(10.dp))
                                 Button(onClick = {
-                                    displayTestVM.btmSheetExpand.value = false
-                                    displayTestVM.ttsStatus.value = false
+                                    HRViewModel.btmSheetExpand.value = false
+                                    HRViewModel.ttsStatus.value = false
                                 }) {
                                     Text(
                                         text = "No",
@@ -659,16 +660,16 @@ fun SpeakerBottomSheet(
                     }
 
                     1 -> {
-                        if (displayTestVM.vibrationTestResults.value) {
-                            displayTestVM.UpdateResultAfterTest(
+                        if (HRViewModel.vibrationTestResults.value) {
+                            HRViewModel.UpdateResultAfterTest(
                                 context = LocalContext.current,
-                                testName = displayTestVM.vibrationTestName,
+                                testName = HRViewModel.vibrationTestName,
                                 testResult = true
                             )
-                            displayTestVM.vibrationTestResults.value = false
+                            HRViewModel.vibrationTestResults.value = false
                         }
                         TextFn(text = "Vibration Test", color = Color.Black, size = 24)
-                        displayTestVM.VibrationCtrl(vibrator)
+                        HRViewModel.VibrationCtrl(vibrator)
                     }
 
                     2 -> {
@@ -696,51 +697,51 @@ fun SpeakerBottomSheet(
                         /**
                          * Need to implement this 😒😒😒😒
                          */
-                        displayTestVM.SpeechRecZ()
+                        HRViewModel.SpeechRecZ()
                     }
 
                     3 -> {
-                        if (displayTestVM.ringtoneTestResults.value) {
-                            displayTestVM.UpdateResultAfterTest(
+                        if (HRViewModel.ringtoneTestResults.value) {
+                            HRViewModel.UpdateResultAfterTest(
                                 context = context,
-                                testName = displayTestVM.ringtoneTestName,
+                                testName = HRViewModel.ringtoneTestName,
                                 testResult = true
                             )
-                            displayTestVM.ringtoneTestResults.value = false
+                            HRViewModel.ringtoneTestResults.value = false
                         }
                         TextFn(
                             text = "Playing Ringtone...!",
                             color = Color.Black,
                             size = 22
                         )
-                        displayTestVM.RingtoneManager(context)
+                        HRViewModel.RingtoneManager(context)
                     }
 
                     4 -> {
-                        if (displayTestVM.alarmTestResults.value) {
-                            displayTestVM.UpdateResultAfterTest(
+                        if (HRViewModel.alarmTestResults.value) {
+                            HRViewModel.UpdateResultAfterTest(
                                 context = context,
-                                testName = displayTestVM.alarmTestName,
+                                testName = HRViewModel.alarmTestName,
                                 testResult = true
                             )
-                            displayTestVM.alarmTestResults.value = false
+                            HRViewModel.alarmTestResults.value = false
                         }
                         TextFn(
                             text = "Playing Alarm Tone...!",
                             color = Color.Black,
                             size = 22
                         )
-                        displayTestVM.RingtoneManager(context)
+                        HRViewModel.RingtoneManager(context)
                     }
 
                     5 -> {
-                        if (displayTestVM.notificationTestResults.value) {
-                            displayTestVM.UpdateResultAfterTest(
+                        if (HRViewModel.notificationTestResults.value) {
+                            HRViewModel.UpdateResultAfterTest(
                                 context = context,
-                                testName = displayTestVM.notificationTestName,
+                                testName = HRViewModel.notificationTestName,
                                 testResult = true
                             )
-                            displayTestVM.notificationTestResults.value = false
+                            HRViewModel.notificationTestResults.value = false
                         }
 
                         TextFn(
@@ -748,7 +749,7 @@ fun SpeakerBottomSheet(
                             color = Color.Black,
                             size = 22
                         )
-                        displayTestVM.RingtoneManager(context)
+                        HRViewModel.RingtoneManager(context)
                     }
 
                     else -> {
@@ -758,7 +759,7 @@ fun SpeakerBottomSheet(
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Text(
-                                text = "Dummy ${displayTestVM.xId.intValue}",
+                                text = "Dummy ${HRViewModel.xId.intValue}",
                                 fontSize = 22.sp,
                                 fontWeight = FontWeight.Bold,
                                 textAlign = TextAlign.Start
@@ -771,12 +772,13 @@ fun SpeakerBottomSheet(
     }
 }
 
+@SuppressLint("MissingPermission")
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
 @Composable
 fun ConnectivityOptions(
     navController: NavController,
     allTestResults: Map<String, Boolean>,
-    displayTestVM: DisplayTestVM
+    HRViewModel: HRViewModel
 ) {
 
     val context = LocalContext.current
@@ -806,10 +808,10 @@ fun ConnectivityOptions(
                     .padding(6.dp),
                 elevation = cardElevation(),
                 colors = CardDefaults.cardColors(
-                    containerColor = displayTestVM.connectivityCardColors(coi, allTestResults),
+                    containerColor = HRViewModel.connectivityCardColors(coi, allTestResults),
                     contentColor = Color.Black
                 ),
-                border = BorderStroke(1.5.dp, color = colorResource(displayTestVM.borderColor))
+                border = BorderStroke(1.5.dp, color = colorResource(HRViewModel.borderColor))
             ) {
                 Box(
                     contentAlignment = Alignment.Center,
@@ -825,7 +827,7 @@ fun ConnectivityOptions(
                                     when (coi) {
 
                                         0 -> {
-                                            if (Permission.getPermission()) {
+                                            if (Permission.getLocPermission()) {
                                                 Toast
                                                     .makeText(
                                                         context,
@@ -834,13 +836,26 @@ fun ConnectivityOptions(
                                                     )
                                                     .show()
                                                 navController.navigate("WifiScreen")
+                                            } else {
+                                                Toast
+                                                    .makeText(
+                                                        context,
+                                                        "Please enable location permission",
+                                                        Toast.LENGTH_SHORT
+                                                    )
+                                                    .show()
                                             }
                                         }
 
                                         1 -> {
-                                            val bluetoothIntent =
-                                                Intent(Settings.ACTION_BLUETOOTH_SETTINGS)
-                                            context.startActivity(bluetoothIntent)
+                                            Toast
+                                                .makeText(
+                                                    context,
+                                                    "Navigating to Bluetooth Setting Screen",
+                                                    Toast.LENGTH_SHORT
+                                                )
+                                                .show()
+                                            navController.navigate("BluetoothScreen")
                                         }
 
                                         2 -> {

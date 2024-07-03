@@ -19,6 +19,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.turbotech.displaytest.components.Permission
+import com.turbotech.displaytest.screens.BluetoothScreen
 import com.turbotech.displaytest.screens.HomePage
 import com.turbotech.displaytest.screens.MultiTouches
 import com.turbotech.displaytest.screens.PinchToZoom
@@ -26,11 +27,12 @@ import com.turbotech.displaytest.screens.SingleTouch
 import com.turbotech.displaytest.screens.SwipeScreenTest
 import com.turbotech.displaytest.screens.WifiScreen
 import com.turbotech.displaytest.ui.theme.DisplayTestTheme
-import com.turbotech.displaytest.viewModel.DisplayTestVM
+import com.turbotech.displaytest.viewModel.HRViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -44,7 +46,26 @@ class MainActivity : ComponentActivity() {
         }
         if (ContextCompat.checkSelfPermission(
                 this,
-                Manifest.permission.ACCESS_FINE_LOCATION
+                arrayOf(
+                    Manifest.permission.BLUETOOTH_SCAN,
+                    Manifest.permission.BLUETOOTH_CONNECT
+                ).toString()
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            ActivityCompat.requestPermissions(
+                this as Activity,
+                arrayOf(
+                    Manifest.permission.BLUETOOTH_CONNECT,
+                    Manifest.permission.BLUETOOTH_SCAN
+                ),
+                200
+            )
+        }
+        /*
+        Must enable this again
+        if (ContextCompat.checkSelfPermission(
+                this,
+                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION).toString()
             ) != PackageManager.PERMISSION_GRANTED
         ) {
             ActivityCompat.requestPermissions(
@@ -55,9 +76,11 @@ class MainActivity : ComponentActivity() {
                 ),
                 199
             )
-        }
+        } */
     }
 
+
+    @Deprecated("This method has been deprecated in favor of using the Activity Result API\n      which brings increased type safety via an {@link ActivityResultContract} and the prebuilt\n      contracts for common intents available in\n      {@link androidx.activity.result.contract.ActivityResultContracts}, provides hooks for\n      testing, and allow receiving results in separate, testable classes independent from your\n      activity. Use\n      {@link #registerForActivityResult(ActivityResultContract, ActivityResultCallback)} passing\n      in a {@link RequestMultiplePermissions} object for the {@link ActivityResultContract} and\n      handling the result in the {@link ActivityResultCallback#onActivityResult(Object) callback}.")
     @Suppress("Deprecation")
     override fun onRequestPermissionsResult(
         requestCode: Int,
@@ -67,7 +90,11 @@ class MainActivity : ComponentActivity() {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == 199 && permissions.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
             Log.d("Permission", "Granted")
-            Permission.setPermission()
+            Permission.setLocPermission()
+        }
+        if (requestCode == 200 && permissions.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            Log.d("Permission", "Granted ")
+            Permission.setBcPermission()
         } else {
             Log.d("Permission", "Denied")
         }
@@ -79,27 +106,30 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun Display_Test() {
     val navController = rememberNavController()
-    val viewModel = viewModel<DisplayTestVM>()
+    val vModel = viewModel<HRViewModel>()
 
     NavHost(navController = navController, startDestination = "HomePage") {
 
         composable("HomePage") {
-            HomePage(navController, viewModel)
+            HomePage(navController, vModel)
         }
         composable(route = "SwipeScreenTest") {
-            SwipeScreenTest(navController,viewModel)
+            SwipeScreenTest(navController, vModel)
         }
         composable("SingleTouch") {
-            SingleTouch(navController,viewModel)
+            SingleTouch(navController, vModel)
         }
         composable(route = "MultiTouch") {
-            MultiTouches(navController,viewModel)
+            MultiTouches(navController, vModel)
         }
         composable(route = "PinchToZoom") {
-            PinchToZoom(navController,viewModel)
+            PinchToZoom(navController, vModel)
         }
         composable(route = "WifiScreen") {
-            WifiScreen(navController, viewModel)
+            WifiScreen(navController)
+        }
+        composable(route = "BluetoothScreen") {
+            BluetoothScreen(navController, vModel)
         }
     }
 }

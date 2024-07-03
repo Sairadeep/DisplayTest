@@ -52,20 +52,28 @@ import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
 import com.turbotech.displaytest.R
 import com.turbotech.displaytest.components.TextFn
+import com.turbotech.displaytest.data.BluetoothUiState
+import com.turbotech.displaytest.data.domain.BluetoothController
 import com.turbotech.displaytest.model.DisplayEntities
 import com.turbotech.displaytest.repository.ResultsRepo
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.util.Locale
 import java.util.UUID
 import javax.inject.Inject
 
 @HiltViewModel
-class DisplayTestVM @Inject constructor(private val resultsRepo: ResultsRepo) : ViewModel() {
+class HRViewModel @Inject constructor(
+    private val resultsRepo: ResultsRepo,
+    private val bluetoothController: BluetoothController
+) : ViewModel() {
 
     private val _results = MutableStateFlow<List<DisplayEntities>>(emptyList())
     private val results = _results.asStateFlow()
@@ -99,6 +107,24 @@ class DisplayTestVM @Inject constructor(private val resultsRepo: ResultsRepo) : 
     val ringtoneTestResults = mutableStateOf(false)
     val alarmTestResults = mutableStateOf(false)
     val notificationTestResults = mutableStateOf(false)
+    private val _state = MutableStateFlow(BluetoothUiState())
+
+    //    multiple  flow to a single flow and then to a stateflow
+    val state = combine(
+        bluetoothController.scannedList,
+        bluetoothController.pairedList,
+        _state
+    ) { scannedList, pairedList, state ->
+        state.copy(
+            scannedDevices = scannedList,
+            pairedDevices = pairedList
+        )
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = _state.value
+    )
+
 
     init {
         viewModelScope.launch {
@@ -113,6 +139,16 @@ class DisplayTestVM @Inject constructor(private val resultsRepo: ResultsRepo) : 
                 }
             }
         }
+    }
+
+    fun startScan() {
+        Log.d("HRViewModelStartScan","Start Scan")
+        bluetoothController.startScan()
+    }
+
+    fun stopScan() {
+        Log.d("HRViewModelStopScan","Stop Scan")
+        bluetoothController.stopScan()
     }
 
     private fun insertResult(result: DisplayEntities) =
@@ -202,7 +238,7 @@ class DisplayTestVM @Inject constructor(private val resultsRepo: ResultsRepo) : 
                 "scale: ${scale.floatValue} offset: $offset rotation: ${rotation.floatValue}"
             )
         }
-        // Rotation > 330 degrees and zoom up to 4 times
+        // Rotation > 180 degrees and zoom up to 4 times
         return rotation.floatValue > 180 && scale.floatValue > 4
     }
 

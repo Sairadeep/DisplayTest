@@ -5,6 +5,7 @@ import android.content.Context
 import android.net.wifi.WifiManager
 import android.net.wifi.WifiNetworkSuggestion
 import android.os.Build
+import android.util.Log
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.BorderStroke
@@ -53,14 +54,13 @@ import androidx.wear.compose.material.Text
 import com.turbotech.displaytest.R
 import com.turbotech.displaytest.components.TextFn
 import com.turbotech.displaytest.components.TopAppBarFn
-import com.turbotech.displaytest.viewModel.DisplayTestVM
 
 @SuppressLint("MissingPermission")
 @Suppress( "Deprecation")
 @OptIn(ExperimentalMaterial3Api::class)
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
 @Composable
-fun WifiScreen(navController: NavController, displayTestVM: DisplayTestVM) {
+fun WifiScreen(navController: NavController) {
     val context = LocalContext.current
     val wifiManager = context.getSystemService(Context.WIFI_SERVICE) as WifiManager
     val ssid = wifiManager.scanResults.map { map ->
@@ -77,6 +77,7 @@ fun WifiScreen(navController: NavController, displayTestVM: DisplayTestVM) {
     val showIcon = remember {
         mutableIntStateOf(R.drawable.eye_24)
     }
+    val wifiState = remember { mutableStateOf(false) }
     val keyboardController = LocalSoftwareKeyboardController.current
 
 
@@ -200,16 +201,8 @@ fun WifiScreen(navController: NavController, displayTestVM: DisplayTestVM) {
                                             verticalAlignment = Alignment.CenterVertically,
                                             horizontalArrangement = Arrangement.Center
                                         ) {
-                                            val networkSuggestions = listOf(
-                                                WifiNetworkSuggestion.Builder()
-                                                    .setSsid("TP-Link_Guest_D3A0_5G")
-                                                    .setWpa2Passphrase("02255880")
-                                                    .build()
-                                            )
                                             Button(onClick = {
-                                                wifiManager.addNetworkSuggestions(
-                                                    networkSuggestions
-                                                )
+                                                wifiState.value = true
                                             }) {
                                                 Text(
                                                     text = "Connect",
@@ -220,6 +213,15 @@ fun WifiScreen(navController: NavController, displayTestVM: DisplayTestVM) {
                                         }
                                     }
                                 }
+                            }
+                            if (wifiState.value && !displayName.value.isNullOrEmpty() && !passwordInput.value.isNullOrEmpty()) {
+                                Wifictrl(
+                                    wifiManager = wifiManager,
+                                    displayName.value,
+                                    passwordInput.value
+                                )
+                            } else {
+                                Log.d("wifi_State", "Not connected")
                             }
                             Column(
                                 modifier = Modifier
@@ -251,4 +253,20 @@ fun WifiScreen(navController: NavController, displayTestVM: DisplayTestVM) {
             }
         }
     }
+}
+
+@RequiresApi(Build.VERSION_CODES.Q)
+@Composable
+private fun Wifictrl(wifiManager: WifiManager, ssid: String, password: String) {
+    // Need to implement more, as of now it works on click of it.
+    val networkSuggestions = listOf(
+        WifiNetworkSuggestion.Builder()
+//          .setSsid("TP-Link_Guest_D3A0_5G")
+//          .setWpa2Passphrase("02255880")
+            .setSsid(ssid).setWpa2Passphrase(password)
+            .build()
+    )
+    wifiManager.addNetworkSuggestions(
+        networkSuggestions
+    )
 }

@@ -25,21 +25,21 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavController
 import com.turbotech.displaytest.components.TextFn
 import com.turbotech.displaytest.components.TopAppBarFn
-import com.turbotech.displaytest.viewModel.DisplayTestVM
+import com.turbotech.displaytest.viewModel.HRViewModel
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-fun MultiTouches(navController: NavController, displayTestVM: DisplayTestVM) {
+fun MultiTouches(navController: NavController, HRViewModel: HRViewModel) {
     val currentClicks = remember { mutableIntStateOf(0) }
     val releaseState = remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
-        displayTestVM.insertResultBeforeTest(displayTestVM.multiTouchTestName)
+        HRViewModel.insertResultBeforeTest(HRViewModel.multiTouchTestName)
     }
 
     Surface(modifier = Modifier.fillMaxSize()) {
         Scaffold(
             topBar = {
-                TopAppBarFn(text = displayTestVM.multiTouchTestName, navController)
+                TopAppBarFn(text = HRViewModel.multiTouchTestName, navController)
             },
         ) {
             Column(
@@ -59,7 +59,7 @@ fun MultiTouches(navController: NavController, displayTestVM: DisplayTestVM) {
                     navController,
                     currentClicks,
                     releaseState,
-                    displayTestVM
+                    HRViewModel
                 )
             }
         }
@@ -101,7 +101,7 @@ fun MultiTestResultDisplayText(
     navController: NavController,
     currentClicks: MutableIntState,
     releaseState: MutableState<Boolean>,
-    displayTestVM: DisplayTestVM
+    HRViewModel: HRViewModel
 ) {
     if (releaseState.value) {
         TextFn(
@@ -111,9 +111,9 @@ fun MultiTestResultDisplayText(
         )
         Log.d("currentClicks", "${currentClicks.intValue}")
         if (currentClicks.intValue > 2) {
-            displayTestVM.UpdateResultAfterTest(
+            HRViewModel.UpdateResultAfterTest(
                 context = LocalContext.current,
-                testName = displayTestVM.multiTouchTestName,
+                testName = HRViewModel.multiTouchTestName,
                 testResult = true
             )
             navController.navigate("HomePage")

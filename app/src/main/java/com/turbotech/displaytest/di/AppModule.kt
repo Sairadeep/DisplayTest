@@ -2,8 +2,10 @@ package com.turbotech.displaytest.di
 
 import android.content.Context
 import androidx.room.Room
+import com.turbotech.displaytest.data.DeviceBluetoothController
 import com.turbotech.displaytest.data.DisplayDB
 import com.turbotech.displaytest.data.DisplayTestDao
+import com.turbotech.displaytest.data.domain.BluetoothController
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -27,5 +29,10 @@ object AppModule {
         name = "display_db"
     ).fallbackToDestructiveMigration().build()
 
+    @Singleton
+    @Provides
+    fun provideBluetoothController(@ApplicationContext context: Context): BluetoothController {
+        return DeviceBluetoothController(context)
+    }
 
 }

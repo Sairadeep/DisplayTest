@@ -28,11 +28,11 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavController
-import com.turbotech.displaytest.viewModel.DisplayTestVM
+import com.turbotech.displaytest.viewModel.HRViewModel
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-fun SwipeScreenTest(navController: NavController, displayTestVM: DisplayTestVM) {
+fun SwipeScreenTest(navController: NavController, HRViewModel: HRViewModel) {
 
     val context = LocalContext.current
     val timerState = remember { mutableStateOf(false) }
@@ -68,7 +68,7 @@ fun SwipeScreenTest(navController: NavController, displayTestVM: DisplayTestVM) 
         mutableStateOf(false)
     }
     LaunchedEffect(Unit) {
-        displayTestVM.insertResultBeforeTest(displayTestVM.swipeTestName)
+        HRViewModel.insertResultBeforeTest(HRViewModel.swipeTestName)
     }
 
     Column(
@@ -174,9 +174,9 @@ fun SwipeScreenTest(navController: NavController, displayTestVM: DisplayTestVM) 
                 timer.cancel()
             }
             if (swipeResult.value) {
-                displayTestVM.UpdateResultAfterTest(
+                HRViewModel.UpdateResultAfterTest(
                     context = context,
-                    testName = displayTestVM.swipeTestName,
+                    testName = HRViewModel.swipeTestName,
                     testResult = true
                 )
                 navController.navigate("HomePage")

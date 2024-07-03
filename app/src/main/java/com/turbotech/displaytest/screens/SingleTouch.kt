@@ -19,21 +19,21 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.turbotech.displaytest.components.TopAppBarFn
-import com.turbotech.displaytest.viewModel.DisplayTestVM
+import com.turbotech.displaytest.viewModel.HRViewModel
 
 @Composable
-fun SingleTouch(navController: NavController, displayTestVM: DisplayTestVM) {
+fun SingleTouch(navController: NavController, HRViewModel: HRViewModel) {
 
     LaunchedEffect(Unit) {
-        displayTestVM.insertResultBeforeTest(displayTestVM.singleTouchTestName)
+        HRViewModel.insertResultBeforeTest(HRViewModel.singleTouchTestName)
     }
 
     Scaffold(
         topBar = {
-            TopAppBarFn(displayTestVM.singleTouchTestName,navController)
+            TopAppBarFn(HRViewModel.singleTouchTestName,navController)
         },
         bottomBar = {
-            SingleTouchBottomBar(displayTestVM)
+            SingleTouchBottomBar(HRViewModel)
         }
     ) {
 
@@ -43,23 +43,23 @@ fun SingleTouch(navController: NavController, displayTestVM: DisplayTestVM) {
                 .pointerInput(Unit) {
 //                  convert it to dp to avoid conversion of pixels or xdp or xxx dp
                     detectTapGestures { offset ->
-                        displayTestVM.xPosition.value = offset.x.toDp()
-                        displayTestVM.yPosition.value = offset.y.toDp()
-                        displayTestVM.boxState.value = true
-                        displayTestVM.noOfClicks.intValue += 1
-                        displayTestVM.noC.add(displayTestVM.noOfClicks.intValue)
+                        HRViewModel.xPosition.value = offset.x.toDp()
+                        HRViewModel.yPosition.value = offset.y.toDp()
+                        HRViewModel.boxState.value = true
+                        HRViewModel.noOfClicks.intValue += 1
+                        HRViewModel.noC.add(HRViewModel.noOfClicks.intValue)
                     }
                 }
                 .fillMaxSize()
                 .background(Color.Red)
         ) {
-            displayTestVM.ClickSelectionBox(navController = navController)
+            HRViewModel.ClickSelectionBox(navController = navController)
         }
     }
 }
 
 @Composable
-private fun SingleTouchBottomBar(displayTestVM: DisplayTestVM) {
+private fun SingleTouchBottomBar(HRViewModel: HRViewModel) {
     BottomAppBar(
         modifier = Modifier
             .height(55.dp)
@@ -71,7 +71,7 @@ private fun SingleTouchBottomBar(displayTestVM: DisplayTestVM) {
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            displayTestVM.TextBasedOnClicks()
+            HRViewModel.TextBasedOnClicks()
         }
     }
 }

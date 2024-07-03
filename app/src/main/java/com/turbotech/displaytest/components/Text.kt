@@ -24,10 +24,16 @@ fun TextFn(text: String, color: Color, size: Int) {
 
 object Permission{
 
-    private val permission = mutableStateOf(false)
-    fun setPermission(){
-        permission.value = true
+    private val LocPermission = mutableStateOf(false)
+    private val BluetoothConnectPermission = mutableStateOf(false)
+    fun setLocPermission() {
+        LocPermission.value = true
     }
 
-    fun getPermission() = permission.value
+    fun getLocPermission() = LocPermission.value
+    fun setBcPermission() {
+        BluetoothConnectPermission.value = true
+    }
+
+    fun getBcPermission() = BluetoothConnectPermission.value
 }

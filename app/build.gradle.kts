@@ -72,19 +72,19 @@ dependencies {
     debugImplementation(libs.androidx.ui.test.manifest)
 
 //     Hilt-Dagger
-    implementation("com.google.dagger:hilt-android:2.50")
-    kapt("com.google.dagger:hilt-android-compiler:2.50")
+    implementation(libs.hilt.android)
+    kapt(libs.hilt.android.compiler)
 
     // Room
-    implementation("androidx.room:room-runtime:2.6.1")
-    annotationProcessor("androidx.room:room-compiler:2.6.1")
+    implementation(libs.androidx.room.runtime)
+    annotationProcessor(libs.androidx.room.compiler)
 
     // To use Kotlin annotation processing tool (kapt) MUST HAVE!
     kapt("androidx.room:room-compiler:2.6.1")
-    implementation("androidx.room:room-ktx:2.6.1")
+    implementation(libs.androidx.room.ktx)
 
     // Coroutines
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.2")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.5.2")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.5.2")
+    implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.kotlinx.coroutines.play.services)
 }
