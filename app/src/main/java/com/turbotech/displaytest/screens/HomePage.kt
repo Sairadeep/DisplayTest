@@ -6,9 +6,15 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
 import android.os.Build
+import android.os.CountDownTimer
 import android.os.Vibrator
 import android.provider.Settings
+import android.util.Half.EPSILON
 import android.util.Log
 import android.widget.Toast
 import androidx.annotation.RequiresApi
@@ -39,6 +45,7 @@ import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -49,9 +56,13 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -76,17 +87,19 @@ import com.turbotech.displaytest.R
 import com.turbotech.displaytest.components.ConnectivityCardImages
 import com.turbotech.displaytest.components.DisplayCardImages
 import com.turbotech.displaytest.components.Permission
+import com.turbotech.displaytest.components.SensorCardImages
 import com.turbotech.displaytest.components.SpeakerCardImages
 import com.turbotech.displaytest.components.TextFn
 import com.turbotech.displaytest.components.cardElevation
 import com.turbotech.displaytest.components.topAppBarColorCombo
 import com.turbotech.displaytest.viewModel.HRViewModel
 import kotlinx.coroutines.delay
+import kotlin.math.sqrt
 
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
 @Composable
-fun HomePage(navController: NavHostController, HRViewModel: HRViewModel) {
-    val allTestResults = HRViewModel.getAllTestResults()
+fun HomePage(navController: NavHostController, hRViewModel: HRViewModel) {
+    val allTestResults = hRViewModel.getAllTestResults()
 
     LaunchedEffect(Unit) {
         delay(1000)
@@ -108,7 +121,7 @@ fun HomePage(navController: NavHostController, HRViewModel: HRViewModel) {
                 HomePageDesign(
                     navController = navController,
                     allTestResults = allTestResults,
-                    HRViewModel = HRViewModel
+                    hRViewModel = hRViewModel
                 )
             }
         }
@@ -120,7 +133,7 @@ fun HomePage(navController: NavHostController, HRViewModel: HRViewModel) {
 fun HomePageDesign(
     navController: NavHostController,
     allTestResults: Map<String, Boolean>,
-    HRViewModel: HRViewModel
+    hRViewModel: HRViewModel
 ) {
     val expandableState = remember { mutableStateMapOf<Int, Boolean>() }
     val heightOfIt = 250.dp
@@ -145,7 +158,7 @@ fun HomePageDesign(
                             .padding(4.dp)
                             .border(
                                 width = 1.5.dp,
-                                color = colorResource(id = HRViewModel.borderColor),
+                                color = colorResource(id = hRViewModel.borderColor),
                                 shape = RoundedCornerShape(8.dp)
                             ),
                         contentAlignment = Alignment.Center
@@ -245,7 +258,7 @@ fun HomePageDesign(
                                 .background(color = Color.LightGray, shape = CircleShape)
                                 .border(
                                     width = 1.dp,
-                                    color = colorResource(HRViewModel.borderColor),
+                                    color = colorResource(hRViewModel.borderColor),
                                     shape = CircleShape
                                 ),
                             contentAlignment = Alignment.Center
@@ -272,7 +285,7 @@ fun HomePageDesign(
                                     .padding(top = 5.dp)
                                     .border(
                                         width = 1.dp,
-                                        color = colorResource(id = HRViewModel.borderColor),
+                                        color = colorResource(id = hRViewModel.borderColor),
                                         shape = RoundedCornerShape(12.dp),
                                     )
                             ) {
@@ -282,21 +295,28 @@ fun HomePageDesign(
                                             navController = navController,
                                             allTestResults = allTestResults,
                                             height = heightOfIt,
-                                            HRViewModel = HRViewModel
+                                            hRViewModel = hRViewModel
                                         )
                                     }
 
                                     1 -> SpeakerTestOptions(
                                         heightOfIt,
                                         allTestResults,
-                                        HRViewModel
+                                        hRViewModel
                                     )
 
                                     2 -> {
                                         ConnectivityOptions(
                                             navController,
                                             allTestResults,
-                                            HRViewModel
+                                            hRViewModel
+                                        )
+                                    }
+
+                                    3 -> {
+                                        SensorOptions(
+                                            allTestResults = allTestResults,
+                                            hRViewModel = hRViewModel
                                         )
                                     }
 
@@ -333,7 +353,7 @@ fun DisplayTestOptions(
     navController: NavHostController,
     allTestResults: Map<String, Boolean>,
     height: Dp,
-    HRViewModel: HRViewModel
+    hRViewModel: HRViewModel
 ) {
     val itemText = remember { mutableStateOf("Dummy") }
     val context = LocalContext.current
@@ -351,15 +371,15 @@ fun DisplayTestOptions(
                         navController,
                         context,
                         allTestResults,
-                        HRViewModel
+                        hRViewModel
                     )
                 },
                 modifier = Modifier
                     .size(125.dp)
                     .padding(6.dp),
-                border = BorderStroke(1.5.dp, color = colorResource(HRViewModel.borderColor)),
+                border = BorderStroke(1.5.dp, color = colorResource(hRViewModel.borderColor)),
                 colors = CardDefaults.cardColors(
-                    containerColor = cardColorForDT(index, allTestResults, HRViewModel),
+                    containerColor = hRViewModel.cardColorForDT(index, allTestResults, hRViewModel),
                     contentColor = Color.Black
                 ),
                 enabled = true,
@@ -413,30 +433,12 @@ fun DisplayTestOptions(
     }
 }
 
-private fun cardColorForDT(
-    index: Int,
-    allTestResults: Map<String, Boolean>,
-    HRViewModel: HRViewModel
-) = when {
-    index == 0 && allTestResults[HRViewModel.swipeTestName] == true -> Color.Green
-    index == 0 && allTestResults[HRViewModel.swipeTestName] == false -> Color.Red
-    index == 1 && allTestResults[HRViewModel.singleTouchTestName] == true -> Color.Green
-    index == 1 && allTestResults[HRViewModel.singleTouchTestName] == false -> Color.Red
-    index == 2 && allTestResults[HRViewModel.multiTouchTestName] == true -> Color.Green
-    index == 2 && allTestResults[HRViewModel.multiTouchTestName] == false -> Color.Red
-    index == 3 && allTestResults[HRViewModel.pinchToZoomTestName] == true -> Color.Green
-    index == 3 && allTestResults[HRViewModel.pinchToZoomTestName] == false -> Color.Red
-    else -> {
-        Color.White
-    }
-}
-
 private fun subPagesNavigation(
     index: Int,
     navController: NavHostController,
     context: Context,
     allTestResults: Map<String, Boolean>,
-    HRViewModel: HRViewModel
+    hRViewModel: HRViewModel
 ) {
     when (index) {
 
@@ -445,7 +447,7 @@ private fun subPagesNavigation(
         }
 
         1 -> {
-            if (allTestResults[HRViewModel.swipeTestName] != null) {
+            if (allTestResults[hRViewModel.swipeTestName] != null) {
                 navController.navigate(route = "SingleTouch")
             } else {
                 Toast.makeText(
@@ -457,7 +459,7 @@ private fun subPagesNavigation(
         }
 
         2 -> {
-            if (allTestResults[HRViewModel.singleTouchTestName] != null) {
+            if (allTestResults[hRViewModel.singleTouchTestName] != null) {
                 navController.navigate(route = "MultiTouch")
             } else {
                 Toast.makeText(
@@ -469,7 +471,7 @@ private fun subPagesNavigation(
         }
 
         3 -> {
-            if (allTestResults[HRViewModel.multiTouchTestName] != null) {
+            if (allTestResults[hRViewModel.multiTouchTestName] != null) {
                 navController.navigate(route = "PinchToZoom")
             } else {
                 Toast.makeText(
@@ -487,7 +489,7 @@ private fun subPagesNavigation(
 fun SpeakerTestOptions(
     height: Dp,
     allTestResults: Map<String, Boolean>,
-    HRViewModel: HRViewModel
+    hrViewModel: HRViewModel
 ) {
     val speakerImageId = remember { mutableIntStateOf(0) }
     val speakerCardText = remember { mutableStateOf("Dummy") }
@@ -535,10 +537,10 @@ fun SpeakerTestOptions(
                     .padding(6.dp),
                 elevation = cardElevation(),
                 colors = CardDefaults.cardColors(
-                    containerColor = HRViewModel.cardColorForST(spoIndex, allTestResults),
+                    containerColor = hrViewModel.cardColorForST(spoIndex, allTestResults),
                     contentColor = Color.Black
                 ),
-                border = BorderStroke(1.5.dp, color = colorResource(HRViewModel.borderColor))
+                border = BorderStroke(1.5.dp, color = colorResource(hrViewModel.borderColor))
             ) {
                 Box(
                     contentAlignment = Alignment.Center,
@@ -551,8 +553,8 @@ fun SpeakerTestOptions(
                             .clickable(
                                 enabled = true,
                                 onClick = {
-                                    HRViewModel.btmSheetExpand.value = true
-                                    HRViewModel.xId.intValue = spoIndex
+                                    hrViewModel.btmSheetExpand.value = true
+                                    hrViewModel.xId.intValue = spoIndex
                                 }
                             ),
                         verticalArrangement = Arrangement.Center,
@@ -573,7 +575,7 @@ fun SpeakerTestOptions(
             }
         }
     }
-    SpeakerBottomSheet(HRViewModel)
+    SpeakerBottomSheet(hrViewModel)
 }
 
 @Composable
@@ -581,16 +583,16 @@ fun SpeakerTestOptions(
 @Suppress("DEPRECATION")
 @OptIn(ExperimentalMaterial3Api::class)
 fun SpeakerBottomSheet(
-    HRViewModel: HRViewModel
+    hRViewModel: HRViewModel
 ) {
     val context = LocalContext.current
     val speakTestResult = remember { mutableStateOf(false) }
     val xText = remember { mutableStateOf("Playing Music") }
     val vibrator =
         context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
-    if (HRViewModel.btmSheetExpand.value) {
+    if (hRViewModel.btmSheetExpand.value) {
         ModalBottomSheet(
-            onDismissRequest = { HRViewModel.btmSheetExpand.value = false },
+            onDismissRequest = { hRViewModel.btmSheetExpand.value = false },
             shape = RoundedCornerShape(30.dp),
             modifier = Modifier
                 .fillMaxWidth()
@@ -601,8 +603,7 @@ fun SpeakerBottomSheet(
                 skipPartiallyExpanded = true,
                 skipHiddenState = false
             ),
-            contentColor = Color.Green,
-            containerColor = colorResource(id = HRViewModel.borderColor)
+            containerColor = Color.White
         ) {
             Column(
                 modifier = Modifier.fillMaxSize(),
@@ -611,13 +612,13 @@ fun SpeakerBottomSheet(
                 /**
                  * Need to verify that the device volume isn't set to minimum or muted.
                  */
-                when (HRViewModel.xId.intValue) {
+                when (hRViewModel.xId.intValue) {
                     0 -> {
-                        HRViewModel.MediaPlayerCtrl()
-                        HRViewModel.TextToSpeakFn(context)
+                        hRViewModel.MediaPlayerCtrl()
+                        hRViewModel.TextToSpeakFn(context)
                         Spacer(modifier = Modifier.height(10.dp))
-                        if (HRViewModel.toShowBtn.value) {
-                            TextFn(text = HRViewModel.yText.value, color = Color.Black, size = 24)
+                        if (hRViewModel.toShowBtn.value) {
+                            TextFn(text = hRViewModel.yText.value, color = Color.Black, size = 24)
                             Row {
                                 Button(onClick = {
                                     speakTestResult.value = true
@@ -628,12 +629,12 @@ fun SpeakerBottomSheet(
                                         fontWeight = FontWeight.Bold
                                     )
                                     if (speakTestResult.value) {
-                                        HRViewModel.UpdateResultAfterTest(
+                                        hRViewModel.UpdateResultAfterTest(
                                             context = LocalContext.current,
-                                            testName = HRViewModel.speakTestName,
+                                            testName = hRViewModel.speakTestName,
                                             testResult = true
                                         )
-                                        HRViewModel.btmSheetExpand.value = false
+                                        hRViewModel.btmSheetExpand.value = false
                                         speakTestResult.value = false
                                     } else {
                                         Log.d(
@@ -644,8 +645,8 @@ fun SpeakerBottomSheet(
                                 }
                                 Spacer(modifier = Modifier.width(10.dp))
                                 Button(onClick = {
-                                    HRViewModel.btmSheetExpand.value = false
-                                    HRViewModel.ttsStatus.value = false
+                                    hRViewModel.btmSheetExpand.value = false
+                                    hRViewModel.ttsStatus.value = false
                                 }) {
                                     Text(
                                         text = "No",
@@ -660,16 +661,16 @@ fun SpeakerBottomSheet(
                     }
 
                     1 -> {
-                        if (HRViewModel.vibrationTestResults.value) {
-                            HRViewModel.UpdateResultAfterTest(
+                        if (hRViewModel.vibrationTestResults.value) {
+                            hRViewModel.UpdateResultAfterTest(
                                 context = LocalContext.current,
-                                testName = HRViewModel.vibrationTestName,
+                                testName = hRViewModel.vibrationTestName,
                                 testResult = true
                             )
-                            HRViewModel.vibrationTestResults.value = false
+                            hRViewModel.vibrationTestResults.value = false
                         }
                         TextFn(text = "Vibration Test", color = Color.Black, size = 24)
-                        HRViewModel.VibrationCtrl(vibrator)
+                        hRViewModel.VibrationCtrl(vibrator)
                     }
 
                     2 -> {
@@ -697,51 +698,51 @@ fun SpeakerBottomSheet(
                         /**
                          * Need to implement this 😒😒😒😒
                          */
-                        HRViewModel.SpeechRecZ()
+                        hRViewModel.SpeechRecZ()
                     }
 
                     3 -> {
-                        if (HRViewModel.ringtoneTestResults.value) {
-                            HRViewModel.UpdateResultAfterTest(
+                        if (hRViewModel.ringtoneTestResults.value) {
+                            hRViewModel.UpdateResultAfterTest(
                                 context = context,
-                                testName = HRViewModel.ringtoneTestName,
+                                testName = hRViewModel.ringtoneTestName,
                                 testResult = true
                             )
-                            HRViewModel.ringtoneTestResults.value = false
+                            hRViewModel.ringtoneTestResults.value = false
                         }
                         TextFn(
                             text = "Playing Ringtone...!",
                             color = Color.Black,
                             size = 22
                         )
-                        HRViewModel.RingtoneManager(context)
+                        hRViewModel.RingtoneManager(context)
                     }
 
                     4 -> {
-                        if (HRViewModel.alarmTestResults.value) {
-                            HRViewModel.UpdateResultAfterTest(
+                        if (hRViewModel.alarmTestResults.value) {
+                            hRViewModel.UpdateResultAfterTest(
                                 context = context,
-                                testName = HRViewModel.alarmTestName,
+                                testName = hRViewModel.alarmTestName,
                                 testResult = true
                             )
-                            HRViewModel.alarmTestResults.value = false
+                            hRViewModel.alarmTestResults.value = false
                         }
                         TextFn(
                             text = "Playing Alarm Tone...!",
                             color = Color.Black,
                             size = 22
                         )
-                        HRViewModel.RingtoneManager(context)
+                        hRViewModel.RingtoneManager(context)
                     }
 
                     5 -> {
-                        if (HRViewModel.notificationTestResults.value) {
-                            HRViewModel.UpdateResultAfterTest(
+                        if (hRViewModel.notificationTestResults.value) {
+                            hRViewModel.UpdateResultAfterTest(
                                 context = context,
-                                testName = HRViewModel.notificationTestName,
+                                testName = hRViewModel.notificationTestName,
                                 testResult = true
                             )
-                            HRViewModel.notificationTestResults.value = false
+                            hRViewModel.notificationTestResults.value = false
                         }
 
                         TextFn(
@@ -749,7 +750,7 @@ fun SpeakerBottomSheet(
                             color = Color.Black,
                             size = 22
                         )
-                        HRViewModel.RingtoneManager(context)
+                        hRViewModel.RingtoneManager(context)
                     }
 
                     else -> {
@@ -759,7 +760,7 @@ fun SpeakerBottomSheet(
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Text(
-                                text = "Dummy ${HRViewModel.xId.intValue}",
+                                text = "Dummy ${hRViewModel.xId.intValue}",
                                 fontSize = 22.sp,
                                 fontWeight = FontWeight.Bold,
                                 textAlign = TextAlign.Start
@@ -778,7 +779,7 @@ fun SpeakerBottomSheet(
 fun ConnectivityOptions(
     navController: NavController,
     allTestResults: Map<String, Boolean>,
-    HRViewModel: HRViewModel
+    hRViewModel: HRViewModel
 ) {
 
     val context = LocalContext.current
@@ -808,10 +809,10 @@ fun ConnectivityOptions(
                     .padding(6.dp),
                 elevation = cardElevation(),
                 colors = CardDefaults.cardColors(
-                    containerColor = HRViewModel.connectivityCardColors(coi, allTestResults),
+                    containerColor = hRViewModel.connectivityCardColors(coi, allTestResults),
                     contentColor = Color.Black
                 ),
-                border = BorderStroke(1.5.dp, color = colorResource(HRViewModel.borderColor))
+                border = BorderStroke(1.5.dp, color = colorResource(hRViewModel.borderColor))
             ) {
                 Box(
                     contentAlignment = Alignment.Center,
@@ -891,6 +892,435 @@ fun ConnectivityOptions(
                                 color = Color.Black,
                                 size = 16
                             )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun SensorOptions(
+    hRViewModel: HRViewModel,
+    allTestResults: Map<String, Boolean>
+) {
+    val currentIndex = remember { mutableIntStateOf(99) }
+    val btmSheetState = remember { mutableStateOf(false) }
+    val sensorImageId = remember { mutableIntStateOf(0) }
+    val sensorCardText = remember { mutableStateOf("Dummy") }
+    if (btmSheetState.value) {
+        sensorTestBottomSheet(
+            state = btmSheetState,
+            vM = hRViewModel,
+            index = currentIndex.intValue
+        )
+    }
+    LazyVerticalGrid(columns = GridCells.Fixed(3), modifier = Modifier.height(125.dp)) {
+        items(count = 3) { index ->
+            when (index) {
+                0 -> {
+                    sensorImageId.intValue = R.drawable.speed_24
+                    sensorCardText.value = "Accelerometer"
+                }
+
+                1 -> {
+                    sensorImageId.intValue = R.drawable.gyroscope
+                    sensorCardText.value = "Gyroscope"
+                }
+
+                else -> {
+                    sensorImageId.intValue = R.drawable.light_mode_24
+                    sensorCardText.value = "Light Sensor"
+                }
+
+            }
+            Card(
+                modifier = Modifier
+                    .size(125.dp)
+                    .padding(6.dp),
+                elevation = cardElevation(),
+                colors = CardDefaults.cardColors(
+                    containerColor = hRViewModel.cardColorForSensorTest(index, allTestResults),
+                    contentColor = Color.Black
+                ),
+                border = BorderStroke(1.5.dp, color = colorResource(hRViewModel.borderColor))
+            ) {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .fillMaxSize()
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clickable(
+                                enabled = true,
+                                onClick = {
+                                    when (index) {
+
+                                        0 -> {
+                                            currentIndex.intValue = index
+                                            btmSheetState.value = true
+                                        }
+
+                                        1 -> {
+                                            currentIndex.intValue = index
+                                            btmSheetState.value = true
+                                        }
+
+                                        else -> {
+                                            currentIndex.intValue = index
+                                            btmSheetState.value = true
+                                        }
+                                    }
+                                }
+                            ),
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+
+                        Row {
+                            SensorCardImages(id = sensorImageId.intValue)
+                        }
+
+                        Spacer(modifier = Modifier.height(7.dp))
+
+                        Row {
+                            TextFn(
+                                text = sensorCardText.value,
+                                color = Color.Black,
+                                size = 14
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun sensorTestBottomSheet(
+    state: MutableState<Boolean>,
+    vM: HRViewModel,
+    index: Int
+) {
+    val context = LocalContext.current
+    lateinit var timer: CountDownTimer
+    val timerValue = remember { mutableLongStateOf(0L) }
+    val lightResult = remember { mutableStateOf(false) }
+    val gravity = FloatArray(3)
+    val accelerationX = remember { mutableFloatStateOf(0f) }
+    val accelerationY = remember { mutableFloatStateOf(0f) }
+    val accelerationZ = remember { mutableFloatStateOf(0f) }
+    val omegaMagnitude = remember { mutableFloatStateOf(0f) }
+    val rotationX = remember { mutableFloatStateOf(0f) }
+    val rotationY = remember { mutableFloatStateOf(0f) }
+    val rotationZ = remember { mutableFloatStateOf(0f) }
+    val lightIllumination = remember { mutableFloatStateOf(0f) }
+    val sensorManager: SensorManager by lazy {
+        context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
+    }
+    val accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+    val gyroscope = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE)
+    val lightSensor = sensorManager.getDefaultSensor(Sensor.TYPE_LIGHT)
+    val sensorEventListener = object : SensorEventListener {
+        override fun onSensorChanged(event: SensorEvent) {
+            when (event.sensor) {
+                gyroscope -> {
+                    rotationX.value = event.values[0]
+                    rotationY.value = event.values[1]
+                    rotationZ.value = event.values[2]
+
+                    omegaMagnitude.floatValue =
+                        sqrt(rotationX.floatValue * rotationX.floatValue + rotationY.floatValue * rotationY.floatValue + rotationZ.floatValue * rotationZ.floatValue)
+
+                    if (omegaMagnitude.floatValue > EPSILON) {
+                        rotationX.floatValue /= omegaMagnitude.floatValue
+                        rotationY.floatValue /= omegaMagnitude.floatValue
+                        rotationZ.floatValue /= omegaMagnitude.floatValue
+                    }
+                    Log.d("Omega", "${omegaMagnitude.floatValue}")
+                }
+
+                accelerometer -> {
+                    val alpha = 0.8f
+                    gravity[0] = alpha * gravity[0] + (1 - alpha) * event.values[0]
+                    gravity[1] = alpha * gravity[1] + (1 - alpha) * event.values[1]
+                    gravity[2] = alpha * gravity[2] + (1 - alpha) * event.values[2]
+
+                    accelerationX.floatValue = event.values[0] - gravity[0]
+                    accelerationY.floatValue = event.values[1] - gravity[1]
+                    accelerationZ.floatValue = event.values[2] - gravity[2]
+                }
+
+                lightSensor -> {
+                    lightIllumination.floatValue = event.values[0]
+                    Log.d("Light", "${lightIllumination.floatValue}")
+                }
+            }
+        }
+
+        override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
+            Log.d("AccelerometerValues", "Accuracy: $accuracy")
+        }
+    }
+    LaunchedEffect(Unit) {
+        when (index) {
+            0 -> {
+                if (accelerometer != null) {
+                    vM.insertResultBeforeTest(vM.accelerometerSensorTestName)
+                    sensorManager.registerListener(
+                        sensorEventListener,
+                        accelerometer,
+                        SensorManager.SENSOR_DELAY_NORMAL
+                    )
+                } else {
+                    Log.d(
+                        "LaunchedEffectRegistration",
+                        "Can't register accelerometer as the device don't have it."
+                    )
+                }
+            }
+
+            1 -> {
+                if (gyroscope != null) {
+                    vM.insertResultBeforeTest(vM.gyroscopeSensorTestName)
+                    sensorManager.registerListener(
+                        sensorEventListener,
+                        gyroscope,
+                        SensorManager.SENSOR_DELAY_NORMAL
+                    )
+                } else {
+                    Log.d(
+                        "LaunchedEffectRegistration",
+                        "Can't register gyroscope as the device don't have it."
+                    )
+                }
+            }
+
+            else -> {
+                if (lightSensor != null) {
+                    vM.insertResultBeforeTest(vM.lightSensorTestName)
+                    sensorManager.registerListener(
+                        sensorEventListener,
+                        lightSensor,
+                        SensorManager.SENSOR_DELAY_NORMAL
+                    )
+                }
+            }
+        }
+
+    }
+    DisposableEffect(Unit) {
+        onDispose {
+            sensorManager.unregisterListener(sensorEventListener)
+            state.value = false
+        }
+    }
+    if (state.value) {
+        ModalBottomSheet(
+            onDismissRequest = { state.value = false },
+            shape = RoundedCornerShape(30.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(205.dp)
+                .padding(18.dp),
+            scrimColor = Color.Transparent,
+            sheetState = SheetState(
+                skipPartiallyExpanded = true,
+                skipHiddenState = false
+            ),
+            containerColor = Color.White
+        ) {
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                when (index) {
+                    0 -> {
+                        if (accelerometer != null) {
+                            TextFn(
+                                text = "Linear acceleration values",
+                                color = Color.Black,
+                                size = 20
+                            )
+                            Divider(
+                                thickness = 2.dp,
+                                color = Color.Black,
+                                modifier = Modifier.width(250.dp)
+                            )
+                            Spacer(modifier = Modifier.size(5.dp))
+                            TextFn(
+                                text = "X: ${accelerationX.floatValue}",
+                                color = Color.Black,
+                                size = 18
+                            )
+                            Spacer(modifier = Modifier.size(5.dp))
+                            TextFn(
+                                text = "Y: ${accelerationY.floatValue}",
+                                color = Color.Black,
+                                size = 18
+                            )
+                            Spacer(modifier = Modifier.size(5.dp))
+                            TextFn(
+                                text = "Z: ${accelerationZ.floatValue}",
+                                color = Color.Black,
+                                size = 18
+                            )
+                            if (accelerationX.floatValue > 20 || accelerationY.floatValue > 20 || accelerationZ.floatValue > 20) {
+                                state.value = false
+                                Log.d(
+                                    "SpeakerBtmSheetStatus",
+                                    "${state.value} X: ${accelerationX.floatValue} Y: ${accelerationY.floatValue} Z: ${accelerationZ.floatValue}"
+                                )
+                                vM.UpdateResultAfterTest(
+                                    context = context,
+                                    testName = vM.accelerometerSensorTestName,
+                                    testResult = true
+                                )
+                            } else {
+                                Log.d(
+                                    "SpeakerBtmSheetStatus",
+                                    "${state.value} X: ${accelerationX.floatValue} Y: ${accelerationY.floatValue} Z: ${accelerationZ.floatValue}"
+                                )
+                            }
+                        } else {
+                            TextFn(
+                                text = "No Accelerometer sensor available",
+                                color = Color.Black,
+                                size = 24
+                            )
+                        }
+                    }
+
+                    1 -> {
+                        if (gyroscope != null) {
+                            TextFn(
+                                text = "Gyroscope values",
+                                color = Color.Black,
+                                size = 20
+                            )
+                            Divider(
+                                thickness = 2.dp,
+                                color = Color.Black,
+                                modifier = Modifier.width(200.dp)
+                            )
+                            Spacer(modifier = Modifier.size(5.dp))
+                            TextFn(
+                                text = "X: ${rotationX.floatValue}",
+                                color = Color.Black,
+                                size = 18
+                            )
+                            Spacer(modifier = Modifier.size(5.dp))
+                            TextFn(
+                                text = "Y: ${rotationY.floatValue}",
+                                color = Color.Black,
+                                size = 18
+                            )
+                            Spacer(modifier = Modifier.size(5.dp))
+                            TextFn(
+                                text = "Z: ${rotationZ.floatValue}",
+                                color = Color.Black,
+                                size = 18
+                            )
+                            Spacer(modifier = Modifier.size(5.dp))
+                            TextFn(
+                                text = "Magnitude: ${omegaMagnitude.floatValue}",
+                                color = Color.Black,
+                                size = 18
+                            )
+                            if (omegaMagnitude.floatValue > 0.5) {
+                                state.value = false
+                                vM.UpdateResultAfterTest(
+                                    context = context,
+                                    testName = vM.gyroscopeSensorTestName,
+                                    testResult = true
+                                )
+                            } else {
+                                Log.d(
+                                    "SpeakerBtmSheetStatus",
+                                    "${state.value} X: ${accelerationX.floatValue} Y: ${accelerationY.floatValue} Z: ${accelerationZ.floatValue}"
+                                )
+                            }
+                        } else {
+                            TextFn(
+                                text = "No Gyroscope sensor available",
+                                color = Color.Black,
+                                size = 24
+                            )
+                        }
+                    }
+
+                    else -> {
+                        Column(
+                            modifier = Modifier.fillMaxSize(),
+                            verticalArrangement = Arrangement.Top,
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            if (lightSensor != null) {
+                                timer = object : CountDownTimer(5000, 1000) {
+
+                                    override fun onTick(millisUntilFinished: Long) {
+                                        timerValue.longValue = (millisUntilFinished / 1000)
+                                        Log.d("RemainingX", "${millisUntilFinished / 1000}")
+                                    }
+
+
+                                    override fun onFinish() {
+                                        timer.cancel()
+                                        if (lightIllumination.floatValue.toInt() in 1..10000 && lightIllumination.floatValue.toInt() > 10) {
+                                            lightResult.value = true
+                                        } else {
+                                            Toast.makeText(
+                                                context,
+                                                "Test Failed..!",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                            lightResult.value = false
+                                            state.value = false
+                                        }
+                                    }
+
+                                }
+                                LaunchedEffect(Unit) {
+                                    timer.start()
+                                }
+                                TextFn(
+                                    text = "Light Sensor Illumination",
+                                    color = Color.Black,
+                                    size = 20
+                                )
+                                Divider(
+                                    thickness = 2.dp,
+                                    color = Color.Black,
+                                    modifier = Modifier.width(300.dp)
+                                )
+                                Spacer(modifier = Modifier.size(15.dp))
+                                TextFn(
+                                    text = "Light Illumination: ${lightIllumination.floatValue} lux",
+                                    color = Color.Black,
+                                    size = 18
+                                )
+                                if (lightResult.value) {
+                                    vM.UpdateResultAfterTest(
+                                        context = context,
+                                        testName = vM.lightSensorTestName,
+                                        testResult = true
+                                    )
+                                    lightResult.value = false
+                                    state.value = false
+                                }
+                            } else {
+                                TextFn(
+                                    text = "No Light Sensor available",
+                                    color = Color.Black,
+                                    size = 24
+                                )
+                            }
                         }
                     }
                 }
