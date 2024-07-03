@@ -91,6 +91,9 @@ class HRViewModel @Inject constructor(
     private val wifiTestName: String = "Wifi_Test"
     private val bluetoothTestName: String = "Bluetooth_Test"
     private val locationTestName: String = "Location_Test"
+    val accelerometerSensorTestName: String = "Accelerometer_Sensor_Test"
+    val gyroscopeSensorTestName: String = "Gyroscope_Sensor_Test"
+    val lightSensorTestName: String = "Light_Sensor_Test"
     val boxState = mutableStateOf(false)
     val xPosition = mutableStateOf(0.dp)
     val yPosition = mutableStateOf(0.dp)
@@ -330,6 +333,39 @@ class HRViewModel @Inject constructor(
         index == 4 && allTestResults[alarmTestName] == false -> Color.Red
         index == 5 && allTestResults[notificationTestName] == true -> Color.Green
         index == 5 && allTestResults[notificationTestName] == false -> Color.Red
+        else -> {
+            Color.White
+        }
+    }
+
+    fun cardColorForSensorTest(
+        index: Int,
+        allTestResults: Map<String, Boolean>,
+    ) = when {
+        index == 0 && allTestResults[accelerometerSensorTestName] == true -> Color.Green
+        index == 0 && allTestResults[accelerometerSensorTestName] == false -> Color.Red
+        index == 1 && allTestResults[gyroscopeSensorTestName] == true -> Color.Green
+        index == 1 && allTestResults[gyroscopeSensorTestName] == false -> Color.Red
+        index == 2 && allTestResults[lightSensorTestName] == true -> Color.Green
+        index == 2 && allTestResults[lightSensorTestName] == false -> Color.Red
+        else -> {
+            Color.White
+        }
+    }
+
+     fun cardColorForDT(
+        index: Int,
+        allTestResults: Map<String, Boolean>,
+        hRViewModel: HRViewModel
+    ) = when {
+        index == 0 && allTestResults[hRViewModel.swipeTestName] == true -> Color.Green
+        index == 0 && allTestResults[hRViewModel.swipeTestName] == false -> Color.Red
+        index == 1 && allTestResults[hRViewModel.singleTouchTestName] == true -> Color.Green
+        index == 1 && allTestResults[hRViewModel.singleTouchTestName] == false -> Color.Red
+        index == 2 && allTestResults[hRViewModel.multiTouchTestName] == true -> Color.Green
+        index == 2 && allTestResults[hRViewModel.multiTouchTestName] == false -> Color.Red
+        index == 3 && allTestResults[hRViewModel.pinchToZoomTestName] == true -> Color.Green
+        index == 3 && allTestResults[hRViewModel.pinchToZoomTestName] == false -> Color.Red
         else -> {
             Color.White
         }

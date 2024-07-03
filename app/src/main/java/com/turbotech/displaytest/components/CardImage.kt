@@ -58,3 +58,18 @@ fun SpeakerCardImages(id: Int) {
         contentScale = ContentScale.Fit
     )
 }
+
+@Composable
+fun SensorCardImages(id: Int) {
+    Image(
+        painter = painterResource(id = id),
+        contentDescription = "",
+        modifier = Modifier
+            .size(70.dp)
+            .padding(top = 3.dp)
+            .border(0.75.dp, color = Color.DarkGray, shape = CircleShape)
+            .clip(CircleShape),
+        alignment = Alignment.Center,
+        contentScale = ContentScale.FillWidth
+    )
+}
