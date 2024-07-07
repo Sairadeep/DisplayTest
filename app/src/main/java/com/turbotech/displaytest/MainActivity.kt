@@ -56,7 +56,7 @@ class MainActivity : ComponentActivity() {
                 this as Activity,
                 arrayOf(
                     Manifest.permission.BLUETOOTH_CONNECT,
-                    Manifest.permission.BLUETOOTH_SCAN
+                    Manifest.permission.BLUETOOTH_SCAN,
                 ),
                 200
             )
@@ -97,6 +97,11 @@ class MainActivity : ComponentActivity() {
             Permission.setBcPermission()
         } else {
             Log.d("Permission", "Denied")
+        }
+        if(requestCode == 80 && permissions.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED){
+            Log.d("Permission","Granted")
+        }else{
+            Log.d("Permission","Denied")
         }
     }
 }

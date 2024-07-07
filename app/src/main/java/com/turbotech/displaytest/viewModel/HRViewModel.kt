@@ -94,6 +94,8 @@ class HRViewModel @Inject constructor(
     val accelerometerSensorTestName: String = "Accelerometer_Sensor_Test"
     val gyroscopeSensorTestName: String = "Gyroscope_Sensor_Test"
     val lightSensorTestName: String = "Light_Sensor_Test"
+    val rearCamTest = "Rear_Camera_Test"
+    val frontCamTest = "Front_Camera_Test"
     val boxState = mutableStateOf(false)
     val xPosition = mutableStateOf(0.dp)
     val yPosition = mutableStateOf(0.dp)
@@ -348,6 +350,19 @@ class HRViewModel @Inject constructor(
         index == 1 && allTestResults[gyroscopeSensorTestName] == false -> Color.Red
         index == 2 && allTestResults[lightSensorTestName] == true -> Color.Green
         index == 2 && allTestResults[lightSensorTestName] == false -> Color.Red
+        else -> {
+            Color.White
+        }
+    }
+
+    fun cardColorForCamTest(
+        index: Int,
+        allTestResults: Map<String, Boolean>,
+    ) = when {
+        index == 0 && allTestResults[rearCamTest] == true -> Color.Green
+        index == 0 && allTestResults[rearCamTest] == false -> Color.Red
+        index == 1 && allTestResults[frontCamTest] == true -> Color.Green
+        index == 1 && allTestResults[frontCamTest] == false -> Color.Red
         else -> {
             Color.White
         }

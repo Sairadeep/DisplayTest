@@ -59,8 +59,24 @@ fun SpeakerCardImages(id: Int) {
     )
 }
 
+
 @Composable
 fun SensorCardImages(id: Int) {
+    Image(
+        painter = painterResource(id = id),
+        contentDescription = "",
+        modifier = Modifier
+            .size(70.dp)
+            .padding(top = 3.dp)
+            .border(0.75.dp, color = Color.DarkGray, shape = CircleShape)
+            .clip(CircleShape),
+        alignment = Alignment.Center,
+        contentScale = ContentScale.FillWidth
+    )
+}
+
+@Composable
+fun CamCardImages(id: Int) {
     Image(
         painter = painterResource(id = id),
         contentDescription = "",
