@@ -6,6 +6,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
@@ -13,14 +14,18 @@ import android.hardware.SensorManager
 import android.os.Build
 import android.os.CountDownTimer
 import android.os.Vibrator
+import android.provider.MediaStore
 import android.provider.Settings
 import android.util.Half.EPSILON
 import android.util.Log
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -71,6 +76,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.FilterQuality
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
@@ -84,6 +91,7 @@ import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.wear.compose.material.Text
 import com.turbotech.displaytest.R
+import com.turbotech.displaytest.components.CamCardImages
 import com.turbotech.displaytest.components.ConnectivityCardImages
 import com.turbotech.displaytest.components.DisplayCardImages
 import com.turbotech.displaytest.components.Permission
@@ -95,6 +103,7 @@ import com.turbotech.displaytest.components.topAppBarColorCombo
 import com.turbotech.displaytest.viewModel.HRViewModel
 import kotlinx.coroutines.delay
 import kotlin.math.sqrt
+
 
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
 @Composable
@@ -320,6 +329,12 @@ fun HomePageDesign(
                                         )
                                     }
 
+                                    4 -> {
+                                        CameraTestOptions(
+                                            allTestResults,
+                                            hRViewModel
+                                        )
+                                    }
                                     else -> {
                                         TextFn(
                                             text = "No cards available",
@@ -910,7 +925,7 @@ fun SensorOptions(
     val sensorImageId = remember { mutableIntStateOf(0) }
     val sensorCardText = remember { mutableStateOf("Dummy") }
     if (btmSheetState.value) {
-        sensorTestBottomSheet(
+        SensorTestBottomSheet(
             state = btmSheetState,
             vM = hRViewModel,
             index = currentIndex.intValue
@@ -960,7 +975,7 @@ fun SensorOptions(
                                     when (index) {
 
                                         0 -> {
-                                            currentIndex.intValue = index
+                                            currentIndex.intValue = 0
                                             btmSheetState.value = true
                                         }
 
@@ -1000,9 +1015,280 @@ fun SensorOptions(
     }
 }
 
+@Composable
+fun CameraTestOptions(
+    allTestResults: Map<String, Boolean>,
+    hRViewModel: HRViewModel
+) {
+    val context = LocalContext.current
+    val camPermissionStatus = remember { mutableStateOf(false) }
+    val image = remember { mutableStateOf<Bitmap?>(null) }
+    val imageReadyState = remember { mutableStateOf(false) }
+    val camBtmSheetState = remember { mutableStateOf(false) }
+    val camSelectIndex = remember { mutableIntStateOf(98) }
+    val camPermissionLauncher =
+        rememberLauncherForActivityResult(contract = ActivityResultContracts.RequestPermission()) { isGranted ->
+            if (isGranted) {
+                Toast.makeText(context, "Permission Granted..!", Toast.LENGTH_SHORT).show()
+                camPermissionStatus.value = true
+            } else {
+                Toast.makeText(context, "Permission Denied..!", Toast.LENGTH_SHORT).show()
+                camPermissionStatus.value = false
+            }
+        }
+    val camLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { ar ->
+        if (ar.resultCode == Activity.RESULT_OK) {
+            image.value = ar.data?.extras?.get("data") as Bitmap
+            Log.d("BitCode", "Success: ${image.value}")
+            imageReadyState.value = true
+        } else {
+            Log.d("BitCode", "Fail: ${ar.data}")
+            imageReadyState.value = false
+        }
+    }
+    val camTestImageId = remember { mutableIntStateOf(0) }
+    val camTestCardText = remember { mutableStateOf("Dummy") }
+    val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+    LaunchedEffect(Unit) {
+        camPermissionLauncher.launch(Manifest.permission.CAMERA)
+    }
+    if (imageReadyState.value) {
+        camBtmSheetState.value = true
+        CamBottomSheet(image, camBtmSheetState, hRViewModel, camSelectIndex.intValue)
+    } else {
+        Log.d("ImageReadyState", "Isn't ready yet")
+    }
+    if (!camPermissionStatus.value) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .clickable(
+                    enabled = true,
+                    onClick = {
+                        if (!camPermissionStatus.value) {
+                            camPermissionLauncher.launch(Manifest.permission.CAMERA)
+                        } else {
+                            Toast
+                                .makeText(
+                                    context,
+                                    "Permission already granted..!",
+                                    Toast.LENGTH_SHORT
+                                )
+                                .show()
+                        }
+                    }
+                ),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            TextFn(text = "Please grant camera permission", color = Color.Black, size = 22)
+        }
+    } else {
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(2),
+            modifier = Modifier.height(125.dp)
+        )
+        {
+            items(count = 2) { index ->
+                Card(
+                    modifier = Modifier
+                        .size(125.dp)
+                        .padding(6.dp),
+                    elevation = cardElevation(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = hRViewModel.cardColorForCamTest(index, allTestResults),
+                        contentColor = Color.Black
+                    ),
+                    border = BorderStroke(1.5.dp, color = colorResource(hRViewModel.borderColor))
+                ) {
+                    when (index) {
+                        0 -> {
+                            camTestImageId.intValue = R.drawable.rear_camera
+                            camTestCardText.value = "Back Camera"
+                        }
+
+                        else -> {
+                            camTestImageId.intValue = R.drawable.front_camera
+                            camTestCardText.value = "Front Camera"
+                        }
+
+                    }
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .fillMaxSize()
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clickable(
+                                    enabled = true,
+                                    onClick = {
+                                        when (index) {
+
+                                            0 -> {
+                                                camLauncher.launch(intent)
+                                                camSelectIndex.intValue = 0
+                                                hRViewModel.insertResultBeforeTest(hRViewModel.rearCamTest)
+                                            }
+
+                                            else -> {
+                                                camSelectIndex.intValue = 1
+                                                hRViewModel.insertResultBeforeTest(hRViewModel.frontCamTest)
+                                                intent.putExtra(
+                                                    "android.intent.extras.CAMERA_FACING",
+                                                    1
+                                                )
+                                                intent.putExtra(
+                                                    "android.intent.extras.LENS_FACING_FRONT",
+                                                    1
+                                                )
+                                                intent.putExtra(
+                                                    "android.intent.extra.USE_FRONT_CAMERA",
+                                                    true
+                                                )
+                                                camLauncher.launch(intent)
+                                            }
+                                        }
+                                    }
+                                ),
+                            verticalArrangement = Arrangement.Center,
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+
+                            Row {
+                                CamCardImages(id = camTestImageId.intValue)
+                            }
+
+                            Spacer(modifier = Modifier.height(7.dp))
+
+                            Row {
+                                TextFn(
+                                    text = camTestCardText.value,
+                                    color = Color.Black,
+                                    size = 16
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun sensorTestBottomSheet(
+fun CamBottomSheet(
+    image: MutableState<Bitmap?>,
+    camBtmSheetState: MutableState<Boolean>,
+    hRViewModel: HRViewModel,
+    value: Int
+) {
+    val context = LocalContext.current
+    val result = remember { mutableStateOf(false) }
+    if (camBtmSheetState.value) {
+        if (result.value) {
+            when (value) {
+                0 -> {
+                    hRViewModel.UpdateResultAfterTest(
+                        context = context,
+                        testName = hRViewModel.rearCamTest,
+                        testResult = true
+                    )
+                }
+
+                1 -> {
+                    hRViewModel.UpdateResultAfterTest(
+                        context = context,
+                        testName = hRViewModel.frontCamTest,
+                        testResult = true
+                    )
+                }
+
+                else -> {
+                    Log.d("CamTestResultUpdateStatus", "No result..!")
+                }
+            }
+
+            LaunchedEffect(Unit) {
+                delay(100)
+                camBtmSheetState.value = false
+            }
+            DisposableEffect(Unit) {
+                onDispose {
+                    result.value = false
+                }
+            }
+        }
+        ModalBottomSheet(
+            onDismissRequest = { camBtmSheetState.value = false },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(400.dp)
+                .padding(12.dp),
+            scrimColor = Color.Transparent,
+            sheetState = SheetState(
+                skipPartiallyExpanded = true,
+                skipHiddenState = false
+            ),
+            containerColor = Color.White,
+            content = {
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.Top,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    TextFn(
+                        text = "Camera Test",
+                        color = Color.Black,
+                        size = 20
+                    )
+                    Divider(
+                        modifier = Modifier.width(140.dp),
+                        thickness = 1.5.dp,
+                        color = Color.Black
+                    )
+                    Spacer(modifier = Modifier.height(10.dp))
+                    image.value?.let {
+                        Image(
+                            bitmap = it.asImageBitmap(),
+                            contentDescription = "Captured Image..!",
+                            modifier = Modifier.size(200.dp),
+                            filterQuality = FilterQuality.High
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(10.dp))
+                    TextFn(
+                        text = "Have you clicked the above image?",
+                        color = Color.Black,
+                        size = 18
+                    )
+                    Row {
+
+                        Button(onClick = {
+                            result.value = true
+                        }) {
+                            TextFn(text = "Yes", color = Color.White, size = 15)
+                        }
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Button(onClick = {
+                            camBtmSheetState.value = false
+                        }) {
+                            TextFn(text = "No", color = Color.White, size = 15)
+                        }
+                    }
+                }
+            }
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SensorTestBottomSheet(
     state: MutableState<Boolean>,
     vM: HRViewModel,
     index: Int
@@ -1030,9 +1316,9 @@ fun sensorTestBottomSheet(
         override fun onSensorChanged(event: SensorEvent) {
             when (event.sensor) {
                 gyroscope -> {
-                    rotationX.value = event.values[0]
-                    rotationY.value = event.values[1]
-                    rotationZ.value = event.values[2]
+                    rotationX.floatValue = event.values[0]
+                    rotationY.floatValue = event.values[1]
+                    rotationZ.floatValue = event.values[2]
 
                     omegaMagnitude.floatValue =
                         sqrt(rotationX.floatValue * rotationX.floatValue + rotationY.floatValue * rotationY.floatValue + rotationZ.floatValue * rotationZ.floatValue)
@@ -1122,7 +1408,7 @@ fun sensorTestBottomSheet(
     }
     if (state.value) {
         ModalBottomSheet(
-            onDismissRequest = { state.value = false },
+            onDismissRequest = { state.value = true },
             shape = RoundedCornerShape(30.dp),
             modifier = Modifier
                 .fillMaxWidth()
@@ -1194,6 +1480,10 @@ fun sensorTestBottomSheet(
                                 color = Color.Black,
                                 size = 24
                             )
+                            LaunchedEffect(Unit) {
+                                delay(3000)
+                                state.value = false
+                            }
                         }
                     }
 
@@ -1252,6 +1542,10 @@ fun sensorTestBottomSheet(
                                 color = Color.Black,
                                 size = 24
                             )
+                            LaunchedEffect(Unit) {
+                                delay(3000)
+                                state.value = false
+                            }
                         }
                     }
 
@@ -1320,6 +1614,10 @@ fun sensorTestBottomSheet(
                                     color = Color.Black,
                                     size = 24
                                 )
+                                LaunchedEffect(Unit) {
+                                    delay(3000)
+                                    state.value = false
+                                }
                             }
                         }
                     }
