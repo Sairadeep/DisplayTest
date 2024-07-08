@@ -46,25 +46,6 @@ class MainActivity : ComponentActivity() {
         }
         if (ContextCompat.checkSelfPermission(
                 this,
-                arrayOf(
-                    Manifest.permission.BLUETOOTH_SCAN,
-                    Manifest.permission.BLUETOOTH_CONNECT
-                ).toString()
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
-            ActivityCompat.requestPermissions(
-                this as Activity,
-                arrayOf(
-                    Manifest.permission.BLUETOOTH_CONNECT,
-                    Manifest.permission.BLUETOOTH_SCAN,
-                ),
-                200
-            )
-        }
-        /*
-        Must enable this again
-        if (ContextCompat.checkSelfPermission(
-                this,
                 arrayOf(Manifest.permission.ACCESS_FINE_LOCATION).toString()
             ) != PackageManager.PERMISSION_GRANTED
         ) {
@@ -76,7 +57,7 @@ class MainActivity : ComponentActivity() {
                 ),
                 199
             )
-        } */
+        } 
     }
 
 
@@ -134,7 +115,7 @@ fun Display_Test() {
             WifiScreen(navController)
         }
         composable(route = "BluetoothScreen") {
-            BluetoothScreen(navController, vModel)
+            BluetoothScreen(navController)
         }
     }
 }

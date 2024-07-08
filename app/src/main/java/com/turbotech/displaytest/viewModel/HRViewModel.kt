@@ -1,7 +1,10 @@
 package com.turbotech.displaytest.viewModel
 
+import android.Manifest
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.media.MediaPlayer
 import android.media.PlaybackParams
 import android.media.RingtoneManager
@@ -22,17 +25,25 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -40,30 +51,31 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
+import androidx.wear.compose.material.Text
 import com.turbotech.displaytest.R
 import com.turbotech.displaytest.components.TextFn
-import com.turbotech.displaytest.data.BluetoothUiState
-import com.turbotech.displaytest.data.domain.BluetoothController
 import com.turbotech.displaytest.model.DisplayEntities
 import com.turbotech.displaytest.repository.ResultsRepo
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.util.Locale
 import java.util.UUID
@@ -72,19 +84,20 @@ import javax.inject.Inject
 @HiltViewModel
 class HRViewModel @Inject constructor(
     private val resultsRepo: ResultsRepo,
-    private val bluetoothController: BluetoothController
+//    private val bluetoothController: BluetoothController
 ) : ViewModel() {
 
     private val _results = MutableStateFlow<List<DisplayEntities>>(emptyList())
     private val results = _results.asStateFlow()
-    private val pageLoad = mutableStateOf(true)
+//    private val pageLoad = mutableStateOf(true)
     val swipeTestName: String = "Swipe_Screen_Test"
     val singleTouchTestName: String = "Single_Touch_Test"
     val multiTouchTestName: String = "Multi_Touch_Test"
     val pinchToZoomTestName: String = "Pinch_To_Zoom_Test"
     val speakTestName: String = "Speaker_Test"
     val vibrationTestName: String = "Vibration_Test"
-    private val micTestName: String = "Microphone_Test"
+    val micTestName: String = "Microphone_Test"
+    val recognizedValue = mutableStateOf("")
     val ringtoneTestName: String = "Ringtone_Test"
     val alarmTestName: String = "Alarm_Test"
     val notificationTestName: String = "Notification_Test"
@@ -112,8 +125,10 @@ class HRViewModel @Inject constructor(
     val ringtoneTestResults = mutableStateOf(false)
     val alarmTestResults = mutableStateOf(false)
     val notificationTestResults = mutableStateOf(false)
-    private val _state = MutableStateFlow(BluetoothUiState())
+//    private val _state = MutableStateFlow(BluetoothUiState())
 
+    /*
+     Required for bluetooth implementation
     //    multiple  flow to a single flow and then to a stateflow
     val state = combine(
         bluetoothController.scannedList,
@@ -147,14 +162,14 @@ class HRViewModel @Inject constructor(
     }
 
     fun startScan() {
-        Log.d("HRViewModelStartScan","Start Scan")
+        Log.d("HRViewModelStartScan", "Start Scan")
         bluetoothController.startScan()
     }
 
     fun stopScan() {
-        Log.d("HRViewModelStopScan","Stop Scan")
+        Log.d("HRViewModelStopScan", "Stop Scan")
         bluetoothController.stopScan()
-    }
+    }       */
 
     private fun insertResult(result: DisplayEntities) =
         viewModelScope.launch {
@@ -179,14 +194,14 @@ class HRViewModel @Inject constructor(
     }
 
     @Composable
-    fun getAllTestResults() : Map<String, Boolean> {
-       val testResult = mutableMapOf<String, Boolean>()
-        getResults().forEach {de ->
+    fun getAllTestResults(): Map<String, Boolean> {
+        val testResult = mutableMapOf<String, Boolean>()
+        getResults().forEach { de ->
             testResult[de.testName] = de.testResult
         }
         return testResult
     }
-
+    
     @Composable
     fun zoomTransformableState(): Boolean {
         val scale = remember {
@@ -340,6 +355,89 @@ class HRViewModel @Inject constructor(
         }
     }
 
+    @Composable
+    fun MicTest(
+        context: Context,
+        micTestResult: MutableState<Boolean>,
+        speechRecStatus: MutableState<Boolean>
+    ) {
+        LaunchedEffect(Unit) {
+            insertResultBeforeTest(micTestName)
+        }
+        if (ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.RECORD_AUDIO
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            ActivityCompat.requestPermissions(
+                context as Activity,
+                arrayOf(
+                    Manifest.permission.RECORD_AUDIO,
+                    Manifest.permission.CALL_PHONE
+                ),
+                99
+            )
+        }
+        if (recognizedValue.value.isEmpty()) {
+            Text(
+                text = "Speak something..!",
+                color = Color.Black,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center
+            )
+        } else {
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.Top,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                TextFn(
+                    text = "Have you spoke this? \n ${recognizedValue.value}",
+                    color = Color.Black,
+                    size = 16
+                )
+                Spacer(modifier = Modifier.height(10.dp))
+                Row(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Button(onClick = { micTestResult.value = true }) {
+                        TextFn(text = "Yes", color = Color.White, size = 14)
+                    }
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Button(onClick = {
+                        recognizedValue.value = ""
+                        btmSheetExpand.value = false
+                    }) {
+                        TextFn(text = "No", color = Color.White, size = 14)
+                    }
+                }
+            }
+        }
+        SpeechRecZ(speechRecStatus.value)
+        if (micTestResult.value) {
+            UpdateResultAfterTest(
+                context = context,
+                testName = micTestName,
+                testResult = true
+            )
+            LaunchedEffect(Unit) {
+                delay(50)
+                speechRecStatus.value = false
+                delay(200)
+                btmSheetExpand.value = false
+            }
+            DisposableEffect(Unit) {
+                onDispose {
+                    micTestResult.value = false
+                    recognizedValue.value = ""
+                }
+            }
+        }
+    }
+
     fun cardColorForSensorTest(
         index: Int,
         allTestResults: Map<String, Boolean>,
@@ -368,7 +466,7 @@ class HRViewModel @Inject constructor(
         }
     }
 
-     fun cardColorForDT(
+    fun cardColorForDT(
         index: Int,
         allTestResults: Map<String, Boolean>,
         hRViewModel: HRViewModel
@@ -567,88 +665,99 @@ class HRViewModel @Inject constructor(
     }
 
     @Composable
-    fun SpeechRecZ() {
-       val context = LocalContext.current
-       val recognizerIntent1 = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
-       val speechRecognizer = SpeechRecognizer.createSpeechRecognizer(
-           context
-       )
-       recognizerIntent1.putExtra(
-           RecognizerIntent.EXTRA_LANGUAGE_MODEL,
-           RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
-       )
-       recognizerIntent1.putExtra(
-           RecognizerIntent.EXTRA_LANGUAGE,
-           Locale.getDefault()
-       )
+    fun SpeechRecZ(value: Boolean) {
+        val context = LocalContext.current
+        val speechRecognizer = SpeechRecognizer.createSpeechRecognizer(context)
+        if (value) {
+            LaunchedEffect(Unit) {
+                insertResultBeforeTest(micTestName)
+            }
+            val recognizerIntent1 = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
+            recognizerIntent1.putExtra(
+                RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
+            )
+            recognizerIntent1.putExtra(
+                RecognizerIntent.EXTRA_LANGUAGE,
+                Locale.getDefault()
+            )
 
-       speechRecognizer.setRecognitionListener(object :
-           RecognitionListener {
+            speechRecognizer.setRecognitionListener(object :
+                RecognitionListener {
 
-           override fun onReadyForSpeech(params: Bundle?) {
-               Log.d("OnReadyForSpeech", "User Ready for speaking.")
-           }
+                override fun onReadyForSpeech(params: Bundle?) {
+                    Log.d("OnReadyForSpeech", "User Ready for speaking.")
+                }
 
-           override fun onBeginningOfSpeech() {
-               Log.d(
-                   "onBeginningOfSpeech",
-                   "The user has started to speak."
-               )
-           }
+                override fun onBeginningOfSpeech() {
+                    Log.d(
+                        "onBeginningOfSpeech",
+                        "The user has started to speak."
+                    )
+                }
 
-           override fun onRmsChanged(rmsdB: Float) {
-               //   Log.d("OnRmsChanged", "Change in the level of sound")
-           }
+                override fun onRmsChanged(rmsdB: Float) {
+                    //   Log.d("OnRmsChanged", "Change in the level of sound")
+                }
 
-           override fun onBufferReceived(buffer: ByteArray?) {
-               Log.d(
-                   "OnBufferReceived",
-                   "More sound has been received."
-               )
-           }
+                override fun onBufferReceived(buffer: ByteArray?) {
+                    Log.d(
+                        "OnBufferReceived",
+                        "More sound has been received."
+                    )
+                }
 
-           override fun onEndOfSpeech() {
-               Log.d(
-                   "onEndOfSpeech",
-                   "Called after the user stops speaking."
-               )
-               speechRecognizer.stopListening()
-           }
+                override fun onEndOfSpeech() {
+                    Log.d(
+                        "onEndOfSpeech",
+                        "Called after the user stops speaking."
+                    )
+                    speechRecognizer.stopListening()
+                }
 
-           override fun onError(error: Int) {
-               Log.d(
-                   "OnError",
-                   "An network or recognition error occurred."
-               )
-           }
+                override fun onError(error: Int) {
+                    Log.d(
+                        "OnError",
+                        "An network or recognition error occurred."
+                    )
+                }
 
-           override fun onResults(results: Bundle?) {
-               Log.d("Results", "Results")
-               val speechResults =
-                   results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-               if (!speechResults.isNullOrEmpty()) {
-                   speechRecognizer.stopListening()
-                   /*Log.d(
-                       "Recognized_Text",
-                       "Current Value : ${speechResults[0]}"
-                   )*/
-               }
-           }
+                override fun onResults(results: Bundle) {
+                    val speechResults: ArrayList<String> =
+                        results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)!!
+                    speechRecognizer.stopListening()
+                    recognizedValue.value = speechResults[0]
+                    Log.d("Recognized_Text", recognizedValue.value)
+                }
 
-           override fun onPartialResults(partialResults: Bundle?) {
-               Log.d(
-                   "OnPartialResults",
-                   "Called when partial recognition results are available."
-               )
-           }
+                override fun onPartialResults(partialResults: Bundle?) {
+                    Log.d(
+                        "OnPartialResults",
+                        "Called when partial recognition results are available."
+                    )
+                    speechRecognizer.stopListening()
+                }
 
-           override fun onEvent(eventType: Int, params: Bundle?) {
-               Log.d(
-                   "OnEvent",
-                   "Reserved for adding future events $eventType"
-               )
-           }
-       })
-       speechRecognizer.startListening(recognizerIntent1)
+                override fun onEvent(eventType: Int, params: Bundle?) {
+                    Log.d(
+                        "OnEvent",
+                        "Reserved for adding future events $eventType"
+                    )
+                }
+            })
+            speechRecognizer.startListening(recognizerIntent1)
+        } else {
+            Log.d("speakRecStatus", "Speak Rec Status: false")
+        }
+    }
+
+    @Composable
+    fun MinVib(vibrator: Vibrator) {
+        vibrator.vibrate(
+            VibrationEffect.createOneShot(
+                100,
+                VibrationEffect.DEFAULT_AMPLITUDE
+            )
+        )
     }
 }

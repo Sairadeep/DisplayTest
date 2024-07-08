@@ -5,7 +5,6 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.hardware.Sensor
 import android.hardware.SensorEvent
@@ -85,8 +84,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.wear.compose.material.Text
@@ -146,13 +143,24 @@ fun HomePageDesign(
 ) {
     val expandableState = remember { mutableStateMapOf<Int, Boolean>() }
     val heightOfIt = 250.dp
+    val context = LocalContext.current
+    val vibrator by lazy {
+        context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+    }
+    val indeText = remember { mutableStateOf("Test Results") }
+    val resultText = remember {
+        mutableStateOf("Dummy")
+    }
+    val passedCount = allTestResults.values.filter { it }.size
+    val failedCount = allTestResults.values.filterNot { it }.size
+    val totalTests = 18
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .height(100.dp)
-            .padding(5.dp)
+            .height(120.dp)
+            .padding(10.dp)
             .clip(RoundedCornerShape(topEnd = 28.dp, bottomStart = 28.dp))
-            .background(Color.Cyan)
+            .background(Color.LightGray)
     ) {
         Row(verticalAlignment = Alignment.Top, modifier = Modifier.padding(5.dp)) {
             LazyVerticalGrid(
@@ -160,24 +168,61 @@ fun HomePageDesign(
                 horizontalArrangement = Arrangement.Center,
                 verticalArrangement = Arrangement.Center
             ) {
-                items(count = 3) {
-                    Box(
+                items(count = 3) { inde ->
+                    Card(
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(4.dp)
+                            .padding(start = 8.dp, 4.dp)
                             .border(
                                 width = 1.5.dp,
                                 color = colorResource(id = hRViewModel.borderColor),
                                 shape = RoundedCornerShape(8.dp)
                             ),
-                        contentAlignment = Alignment.Center
                     ) {
                         Column(
-                            modifier = Modifier.size(75.dp),
-                            verticalArrangement = Arrangement.Center,
-                            horizontalAlignment = Alignment.CenterHorizontally
+                            modifier = Modifier
+                                .size(85.dp)
+                                .padding(8.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
                         ) {
-                            TextFn(text = "Hello", color = Color.Magenta, size = 16)
+                            Row {
+                                when (inde) {
+                                    0 -> {
+                                        indeText.value = "Passed"
+                                        resultText.value = passedCount.toString()
+                                    }
+
+                                    1 -> {
+                                        indeText.value = "Failed"
+                                        resultText.value = failedCount.toString()
+                                    }
+
+                                    2 -> {
+                                        indeText.value = "Pending"
+                                        resultText.value =
+                                            (totalTests - (failedCount + passedCount)).toString()
+                                    }
+
+                                    else -> {
+                                        Log.d("CardNumber","No number")
+                                    }
+                                }
+                                TextFn(
+                                    text = resultText.value,
+                                    color = Color.Black,
+                                    size = 28
+                                )
+                            }
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                TextFn(
+                                    text = indeText.value,
+                                    color = Color.Black,
+                                    size = 18
+                                )
+                            }
                         }
                     }
                 }
@@ -275,7 +320,12 @@ fun HomePageDesign(
                             IconButton(
                                 onClick =
                                 {
-                                    expandableState[hpIndex] = expandableState[hpIndex] != true
+                                    // Toggle the state of the clicked accordion
+                                    val isCurrentlyExpanded = expandableState[hpIndex] ?: false
+                                    expandableState.keys.forEach { key ->
+                                        expandableState[key] = false
+                                    }
+                                    expandableState[hpIndex] = !isCurrentlyExpanded
                                 }
                             ) {
                                 Icon(
@@ -311,7 +361,8 @@ fun HomePageDesign(
                                     1 -> SpeakerTestOptions(
                                         heightOfIt,
                                         allTestResults,
-                                        hRViewModel
+                                        hRViewModel,
+                                        vibrator
                                     )
 
                                     2 -> {
@@ -325,7 +376,8 @@ fun HomePageDesign(
                                     3 -> {
                                         SensorOptions(
                                             allTestResults = allTestResults,
-                                            hRViewModel = hRViewModel
+                                            hRViewModel = hRViewModel,
+                                            vibrator = vibrator
                                         )
                                     }
 
@@ -504,7 +556,7 @@ private fun subPagesNavigation(
 fun SpeakerTestOptions(
     height: Dp,
     allTestResults: Map<String, Boolean>,
-    hrViewModel: HRViewModel
+    hrViewModel: HRViewModel, vibrator: Vibrator
 ) {
     val speakerImageId = remember { mutableIntStateOf(0) }
     val speakerCardText = remember { mutableStateOf("Dummy") }
@@ -590,21 +642,23 @@ fun SpeakerTestOptions(
             }
         }
     }
-    SpeakerBottomSheet(hrViewModel)
+    SpeakerBottomSheet(hrViewModel, vibrator)
 }
 
 @Composable
 @RequiresApi(Build.VERSION_CODES.S)
-@Suppress("DEPRECATION")
 @OptIn(ExperimentalMaterial3Api::class)
 fun SpeakerBottomSheet(
-    hRViewModel: HRViewModel
+    hRViewModel: HRViewModel,
+    vibrator: Vibrator
 ) {
     val context = LocalContext.current
+    val micTestResult = remember { mutableStateOf(false) }
     val speakTestResult = remember { mutableStateOf(false) }
     val xText = remember { mutableStateOf("Playing Music") }
-    val vibrator =
-        context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+    val speechRecStatus = remember {
+        mutableStateOf(false)
+    }
     if (hRViewModel.btmSheetExpand.value) {
         ModalBottomSheet(
             onDismissRequest = { hRViewModel.btmSheetExpand.value = false },
@@ -689,31 +743,8 @@ fun SpeakerBottomSheet(
                     }
 
                     2 -> {
-                        if (ContextCompat.checkSelfPermission(
-                                context,
-                                Manifest.permission.RECORD_AUDIO
-                            ) != PackageManager.PERMISSION_GRANTED
-                        ) {
-                            ActivityCompat.requestPermissions(
-                                context as Activity,
-                                arrayOf(
-                                    Manifest.permission.RECORD_AUDIO,
-                                    Manifest.permission.CALL_PHONE
-                                ),
-                                99
-                            )
-                        }
-                        Text(
-                            text = "How are the things going? \n \n Speak out the above text",
-                            color = Color.Black,
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold,
-                            textAlign = TextAlign.Center
-                        )
-                        /**
-                         * Need to implement this 😒😒😒😒
-                         */
-                        hRViewModel.SpeechRecZ()
+                        speechRecStatus.value = true
+                        hRViewModel.MicTest(context, micTestResult, speechRecStatus)
                     }
 
                     3 -> {
@@ -787,6 +818,7 @@ fun SpeakerBottomSheet(
         }
     }
 }
+
 
 @SuppressLint("MissingPermission")
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
@@ -918,7 +950,8 @@ fun ConnectivityOptions(
 @Composable
 fun SensorOptions(
     hRViewModel: HRViewModel,
-    allTestResults: Map<String, Boolean>
+    allTestResults: Map<String, Boolean>,
+    vibrator: Vibrator
 ) {
     val currentIndex = remember { mutableIntStateOf(99) }
     val btmSheetState = remember { mutableStateOf(false) }
@@ -928,7 +961,8 @@ fun SensorOptions(
         SensorTestBottomSheet(
             state = btmSheetState,
             vM = hRViewModel,
-            index = currentIndex.intValue
+            index = currentIndex.intValue,
+            vibrator
         )
     }
     LazyVerticalGrid(columns = GridCells.Fixed(3), modifier = Modifier.height(125.dp)) {
@@ -1053,6 +1087,11 @@ fun CameraTestOptions(
     val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
     LaunchedEffect(Unit) {
         camPermissionLauncher.launch(Manifest.permission.CAMERA)
+    }
+    DisposableEffect(Unit) {
+        onDispose {
+            camBtmSheetState.value = false
+        }
     }
     if (imageReadyState.value) {
         camBtmSheetState.value = true
@@ -1212,7 +1251,6 @@ fun CamBottomSheet(
                     Log.d("CamTestResultUpdateStatus", "No result..!")
                 }
             }
-
             LaunchedEffect(Unit) {
                 delay(100)
                 camBtmSheetState.value = false
@@ -1291,7 +1329,8 @@ fun CamBottomSheet(
 fun SensorTestBottomSheet(
     state: MutableState<Boolean>,
     vM: HRViewModel,
-    index: Int
+    index: Int,
+    vibrator: Vibrator
 ) {
     val context = LocalContext.current
     lateinit var timer: CountDownTimer
@@ -1408,7 +1447,7 @@ fun SensorTestBottomSheet(
     }
     if (state.value) {
         ModalBottomSheet(
-            onDismissRequest = { state.value = true },
+            onDismissRequest = { state.value = false },
             shape = RoundedCornerShape(30.dp),
             modifier = Modifier
                 .fillMaxWidth()
@@ -1458,6 +1497,7 @@ fun SensorTestBottomSheet(
                                 size = 18
                             )
                             if (accelerationX.floatValue > 20 || accelerationY.floatValue > 20 || accelerationZ.floatValue > 20) {
+                                vM.MinVib(vibrator)
                                 state.value = false
                                 Log.d(
                                     "SpeakerBtmSheetStatus",
@@ -1524,6 +1564,7 @@ fun SensorTestBottomSheet(
                                 size = 18
                             )
                             if (omegaMagnitude.floatValue > 0.5) {
+                                vM.MinVib(vibrator)
                                 state.value = false
                                 vM.UpdateResultAfterTest(
                                     context = context,
@@ -1600,6 +1641,7 @@ fun SensorTestBottomSheet(
                                     size = 18
                                 )
                                 if (lightResult.value) {
+                                   vM.MinVib(vibrator)
                                     vM.UpdateResultAfterTest(
                                         context = context,
                                         testName = vM.lightSensorTestName,
