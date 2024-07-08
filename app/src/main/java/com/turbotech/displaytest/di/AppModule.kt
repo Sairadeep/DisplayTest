@@ -26,10 +26,10 @@ object AppModule {
     fun provideAppDB(@ApplicationContext context: Context): DisplayDB = Room.databaseBuilder(
         context,
         DisplayDB::class.java,
-        name = "display_db"
+        name = "health_report"
     ).fallbackToDestructiveMigration().build()
 
-    @Singleton
+   @Singleton
     @Provides
     fun provideBluetoothController(@ApplicationContext context: Context): BluetoothController {
         return DeviceBluetoothController(context)

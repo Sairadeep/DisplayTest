@@ -5,7 +5,7 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import java.util.UUID
 
-@Entity(tableName = "display_entities_tbl")
+@Entity(tableName = "health_report_tbl")
 data class DisplayEntities(
 
     @PrimaryKey

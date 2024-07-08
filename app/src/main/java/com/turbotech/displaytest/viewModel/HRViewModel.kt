@@ -70,12 +70,14 @@ import androidx.navigation.NavController
 import androidx.wear.compose.material.Text
 import com.turbotech.displaytest.R
 import com.turbotech.displaytest.components.TextFn
+import com.turbotech.displaytest.data.domain.BluetoothController
 import com.turbotech.displaytest.model.DisplayEntities
 import com.turbotech.displaytest.repository.ResultsRepo
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import java.util.Locale
 import java.util.UUID
@@ -84,12 +86,12 @@ import javax.inject.Inject
 @HiltViewModel
 class HRViewModel @Inject constructor(
     private val resultsRepo: ResultsRepo,
-//    private val bluetoothController: BluetoothController
+    private val bluetoothController: BluetoothController
 ) : ViewModel() {
 
     private val _results = MutableStateFlow<List<DisplayEntities>>(emptyList())
     private val results = _results.asStateFlow()
-//    private val pageLoad = mutableStateOf(true)
+    private val pageLoad = mutableStateOf(true)
     val swipeTestName: String = "Swipe_Screen_Test"
     val singleTouchTestName: String = "Single_Touch_Test"
     val multiTouchTestName: String = "Multi_Touch_Test"
@@ -145,6 +147,15 @@ class HRViewModel @Inject constructor(
         initialValue = _state.value
     )
 
+    fun startScan() {
+        Log.d("HRViewModelStartScan", "Start Scan")
+        bluetoothController.startScan()
+    }
+
+    fun stopScan() {
+        Log.d("HRViewModelStopScan", "Stop Scan")
+        bluetoothController.stopScan()
+    }       */
 
     init {
         viewModelScope.launch {
@@ -160,16 +171,6 @@ class HRViewModel @Inject constructor(
             }
         }
     }
-
-    fun startScan() {
-        Log.d("HRViewModelStartScan", "Start Scan")
-        bluetoothController.startScan()
-    }
-
-    fun stopScan() {
-        Log.d("HRViewModelStopScan", "Stop Scan")
-        bluetoothController.stopScan()
-    }       */
 
     private fun insertResult(result: DisplayEntities) =
         viewModelScope.launch {

@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface DisplayTestDao {
 
-    @Query("SELECT * FROM display_entities_tbl")
+    @Query("SELECT * FROM health_report_tbl")
     fun getResultsData(): Flow<List<DisplayEntities>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
