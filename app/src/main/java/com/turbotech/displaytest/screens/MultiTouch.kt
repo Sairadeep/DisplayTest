@@ -22,24 +22,28 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavController
+import com.turbotech.displaytest.R
 import com.turbotech.displaytest.components.TextFn
 import com.turbotech.displaytest.components.TopAppBarFn
 import com.turbotech.displaytest.viewModel.HRViewModel
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-fun MultiTouches(navController: NavController, HRViewModel: HRViewModel) {
+fun MultiTouches(navController: NavController, hRViewModel: HRViewModel) {
     val currentClicks = remember { mutableIntStateOf(0) }
     val releaseState = remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
-        HRViewModel.insertResultBeforeTest(HRViewModel.multiTouchTestName)
+        hRViewModel.insertResultBeforeTest(hRViewModel.multiTouchTestName)
     }
-
+    if (!hRViewModel.textToDisplayState.value) {
+        SplashScreen(displayText = stringResource(id = R.string.Multi_Touch_Detail), hRViewModel)
+    } else {
     Surface(modifier = Modifier.fillMaxSize()) {
         Scaffold(
             topBar = {
-                TopAppBarFn(text = HRViewModel.multiTouchTestName, navController)
+                TopAppBarFn(text = hRViewModel.multiTouchTestName, navController)
             },
         ) {
             Column(
@@ -59,10 +63,11 @@ fun MultiTouches(navController: NavController, HRViewModel: HRViewModel) {
                     navController,
                     currentClicks,
                     releaseState,
-                    HRViewModel
+                    hRViewModel
                 )
             }
         }
+    }
     }
 }
 
@@ -101,7 +106,7 @@ fun MultiTestResultDisplayText(
     navController: NavController,
     currentClicks: MutableIntState,
     releaseState: MutableState<Boolean>,
-    HRViewModel: HRViewModel
+    hrViewModel: HRViewModel
 ) {
     if (releaseState.value) {
         TextFn(
@@ -111,11 +116,12 @@ fun MultiTestResultDisplayText(
         )
         Log.d("currentClicks", "${currentClicks.intValue}")
         if (currentClicks.intValue > 2) {
-            HRViewModel.UpdateResultAfterTest(
+            hrViewModel.UpdateResultAfterTest(
                 context = LocalContext.current,
-                testName = HRViewModel.multiTouchTestName,
+                testName = hrViewModel.multiTouchTestName,
                 testResult = true
             )
+            hrViewModel.textToDisplayState.value = false
             navController.navigate("HomePage")
         }
     }

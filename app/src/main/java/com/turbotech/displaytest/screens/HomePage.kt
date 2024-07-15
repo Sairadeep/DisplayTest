@@ -79,6 +79,7 @@ import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
@@ -423,7 +424,6 @@ fun DisplayTestOptions(
     hRViewModel: HRViewModel
 ) {
     val itemText = remember { mutableStateOf("Dummy") }
-    val context = LocalContext.current
     val displayImageId = remember { mutableIntStateOf(0) }
     LazyVerticalGrid(
         columns = GridCells.Fixed(3),
@@ -435,10 +435,7 @@ fun DisplayTestOptions(
                 onClick = {
                     subPagesNavigation(
                         index,
-                        navController,
-                        context,
-                        allTestResults,
-                        hRViewModel
+                        navController
                     )
                 },
                 modifier = Modifier
@@ -500,13 +497,12 @@ fun DisplayTestOptions(
     }
 }
 
+
 private fun subPagesNavigation(
     index: Int,
-    navController: NavHostController,
-    context: Context,
-    allTestResults: Map<String, Boolean>,
-    hRViewModel: HRViewModel
+    navController: NavHostController
 ) {
+
     when (index) {
 
         0 -> {
@@ -514,39 +510,15 @@ private fun subPagesNavigation(
         }
 
         1 -> {
-            if (allTestResults[hRViewModel.swipeTestName] != null) {
                 navController.navigate(route = "SingleTouch")
-            } else {
-                Toast.makeText(
-                    context,
-                    "Please complete swipe screen test first",
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
         }
 
         2 -> {
-            if (allTestResults[hRViewModel.singleTouchTestName] != null) {
                 navController.navigate(route = "MultiTouch")
-            } else {
-                Toast.makeText(
-                    context,
-                    "Please complete single touch test first",
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
         }
 
         3 -> {
-            if (allTestResults[hRViewModel.multiTouchTestName] != null) {
                 navController.navigate(route = "PinchToZoom")
-            } else {
-                Toast.makeText(
-                    context,
-                    "Please complete multi touch test first",
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
         }
     }
 }
@@ -659,13 +631,17 @@ fun SpeakerBottomSheet(
     val speechRecStatus = remember {
         mutableStateOf(false)
     }
+    val height = remember { mutableIntStateOf(0) }
     if (hRViewModel.btmSheetExpand.value) {
         ModalBottomSheet(
-            onDismissRequest = { hRViewModel.btmSheetExpand.value = false },
+            onDismissRequest = {
+                hRViewModel.textToDisplayState.value = false
+                hRViewModel.btmSheetExpand.value = false
+            },
             shape = RoundedCornerShape(30.dp),
             modifier = Modifier
                 .fillMaxWidth()
-                .height(187.dp)
+                .height(height.intValue.dp)
                 .padding(18.dp),
             scrimColor = Color.Transparent,
             sheetState = SheetState(
@@ -683,88 +659,137 @@ fun SpeakerBottomSheet(
                  */
                 when (hRViewModel.xId.intValue) {
                     0 -> {
-                        hRViewModel.MediaPlayerCtrl()
-                        hRViewModel.TextToSpeakFn(context)
-                        Spacer(modifier = Modifier.height(10.dp))
-                        if (hRViewModel.toShowBtn.value) {
-                            TextFn(text = hRViewModel.yText.value, color = Color.Black, size = 24)
-                            Row {
-                                Button(onClick = {
-                                    speakTestResult.value = true
-                                }) {
-                                    Text(
-                                        text = "Yes",
-                                        fontSize = 16.sp,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                    if (speakTestResult.value) {
-                                        hRViewModel.UpdateResultAfterTest(
-                                            context = LocalContext.current,
-                                            testName = hRViewModel.speakTestName,
-                                            testResult = true
+                        if (!hRViewModel.textToDisplayState.value) {
+                            height.intValue = 500
+                            SplashScreen(
+                                displayText = stringResource(id = R.string.Speaker_Detail),
+                                hRViewModel
+                            )
+                        } else {
+                            height.intValue = 185
+                            hRViewModel.MediaPlayerCtrl()
+                            hRViewModel.TextToSpeakFn(context)
+                            Spacer(modifier = Modifier.height(10.dp))
+                            if (hRViewModel.toShowBtn.value) {
+                                TextFn(
+                                    text = hRViewModel.yText.value,
+                                    color = Color.Black,
+                                    size = 24
+                                )
+                                Row {
+                                    Button(onClick = {
+                                        speakTestResult.value = true
+                                    }) {
+                                        Text(
+                                            text = "Yes",
+                                            fontSize = 16.sp,
+                                            fontWeight = FontWeight.Bold
                                         )
+                                        if (speakTestResult.value) {
+                                            hRViewModel.UpdateResultAfterTest(
+                                                context = LocalContext.current,
+                                                testName = hRViewModel.speakTestName,
+                                                testResult = true
+                                            )
+                                            hRViewModel.textToDisplayState.value = false
+                                            hRViewModel.btmSheetExpand.value = false
+                                            speakTestResult.value = false
+                                        } else {
+                                            Log.d(
+                                                "speakTestResult",
+                                                "speakTestResult.value is empty"
+                                            )
+                                        }
+                                    }
+                                    Spacer(modifier = Modifier.width(10.dp))
+                                    Button(onClick = {
                                         hRViewModel.btmSheetExpand.value = false
-                                        speakTestResult.value = false
-                                    } else {
-                                        Log.d(
-                                            "speakTestResult",
-                                            "speakTestResult.value is empty"
+                                        hRViewModel.ttsStatus.value = false
+                                    }) {
+                                        Text(
+                                            text = "No",
+                                            fontSize = 16.sp,
+                                            fontWeight = FontWeight.Bold
                                         )
                                     }
                                 }
-                                Spacer(modifier = Modifier.width(10.dp))
-                                Button(onClick = {
-                                    hRViewModel.btmSheetExpand.value = false
-                                    hRViewModel.ttsStatus.value = false
-                                }) {
-                                    Text(
-                                        text = "No",
-                                        fontSize = 16.sp,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                }
+                            } else {
+                                TextFn(text = xText.value, color = Color.Black, size = 24)
                             }
-                        } else {
-                            TextFn(text = xText.value, color = Color.Black, size = 24)
                         }
                     }
 
                     1 -> {
+                        if (!hRViewModel.textToDisplayState.value) {
+                            height.intValue = 500
+                            SplashScreen(
+                                displayText = stringResource(id = R.string.vibration_Detail),
+                                hRViewModel
+                            )
+                        } else {
+                            height.intValue = 185
                         if (hRViewModel.vibrationTestResults.value) {
                             hRViewModel.UpdateResultAfterTest(
                                 context = LocalContext.current,
                                 testName = hRViewModel.vibrationTestName,
                                 testResult = true
                             )
+                            hRViewModel.textToDisplayState.value = false
                             hRViewModel.vibrationTestResults.value = false
                         }
                         TextFn(text = "Vibration Test", color = Color.Black, size = 24)
-                        hRViewModel.VibrationCtrl(vibrator)
+                            hRViewModel.VibrationCtrl(vibrator)
+                        }
                     }
 
                     2 -> {
-                        speechRecStatus.value = true
-                        hRViewModel.MicTest(context, micTestResult, speechRecStatus)
+                        if (!hRViewModel.textToDisplayState.value) {
+                            height.intValue = 500
+                            SplashScreen(
+                                displayText = stringResource(id = R.string.Microphone_Detail),
+                                hRViewModel
+                            )
+                        } else {
+                            height.intValue = 185
+                            speechRecStatus.value = true
+                            hRViewModel.MicTest(context, micTestResult, speechRecStatus)
+                        }
                     }
 
                     3 -> {
-                        if (hRViewModel.ringtoneTestResults.value) {
-                            hRViewModel.UpdateResultAfterTest(
-                                context = context,
-                                testName = hRViewModel.ringtoneTestName,
-                                testResult = true
+                        if (!hRViewModel.textToDisplayState.value) {
+                            height.intValue = 500
+                            SplashScreen(
+                                displayText = stringResource(id = R.string.Ringtone_Detail),
+                                hRViewModel
                             )
-                            hRViewModel.ringtoneTestResults.value = false
+                        } else {
+                            height.intValue = 185
+                            if (hRViewModel.ringtoneTestResults.value) {
+                                hRViewModel.UpdateResultAfterTest(
+                                    context = context,
+                                    testName = hRViewModel.ringtoneTestName,
+                                    testResult = true
+                                )
+                            }
+                            TextFn(
+                                text = "Playing Ringtone...!",
+                                color = Color.Black,
+                                size = 22
+                            )
+                            hRViewModel.RingtoneManager(context)
                         }
-                        TextFn(
-                            text = "Playing Ringtone...!",
-                            color = Color.Black,
-                            size = 22
-                        )
-                        hRViewModel.RingtoneManager(context)
                     }
 
                     4 -> {
+                        if (!hRViewModel.textToDisplayState.value) {
+                            height.intValue = 500
+                            SplashScreen(
+                                displayText = stringResource(id = R.string.Alarm_Detail),
+                                hRViewModel
+                            )
+                        } else {
+                            height.intValue = 185
                         if (hRViewModel.alarmTestResults.value) {
                             hRViewModel.UpdateResultAfterTest(
                                 context = context,
@@ -778,10 +803,19 @@ fun SpeakerBottomSheet(
                             color = Color.Black,
                             size = 22
                         )
-                        hRViewModel.RingtoneManager(context)
+                            hRViewModel.RingtoneManager(context)
+                        }
                     }
 
                     5 -> {
+                        if (!hRViewModel.textToDisplayState.value) {
+                            height.intValue = 500
+                            SplashScreen(
+                                displayText = stringResource(id = R.string.Notification_Detail),
+                                hRViewModel
+                            )
+                        } else {
+                            height.intValue = 185
                         if (hRViewModel.notificationTestResults.value) {
                             hRViewModel.UpdateResultAfterTest(
                                 context = context,
@@ -796,7 +830,8 @@ fun SpeakerBottomSheet(
                             color = Color.Black,
                             size = 22
                         )
-                        hRViewModel.RingtoneManager(context)
+                            hRViewModel.RingtoneManager(context)
+                        }
                     }
 
                     else -> {
@@ -1252,17 +1287,22 @@ fun CamBottomSheet(
                 }
             }
             LaunchedEffect(Unit) {
+
                 delay(100)
                 camBtmSheetState.value = false
             }
             DisposableEffect(Unit) {
                 onDispose {
                     result.value = false
+                    hRViewModel.textToDisplayState.value = false
                 }
             }
         }
         ModalBottomSheet(
-            onDismissRequest = { camBtmSheetState.value = false },
+            onDismissRequest = {
+                hRViewModel.textToDisplayState.value = false
+                camBtmSheetState.value = false
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(400.dp)
@@ -1274,6 +1314,9 @@ fun CamBottomSheet(
             ),
             containerColor = Color.White,
             content = {
+                if (!hRViewModel.textToDisplayState.value) {
+                    SplashScreen(displayText = stringResource(id = R.string.camera), hRViewModel)
+                } else {
                 Column(
                     modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.Top,
@@ -1313,11 +1356,13 @@ fun CamBottomSheet(
                         }
                         Spacer(modifier = Modifier.width(10.dp))
                         Button(onClick = {
+                            hRViewModel.textToDisplayState.value = false
                             camBtmSheetState.value = false
                         }) {
                             TextFn(text = "No", color = Color.White, size = 15)
                         }
                     }
+                }
                 }
             }
         )
@@ -1395,6 +1440,7 @@ fun SensorTestBottomSheet(
     LaunchedEffect(Unit) {
         when (index) {
             0 -> {
+
                 if (accelerometer != null) {
                     vM.insertResultBeforeTest(vM.accelerometerSensorTestName)
                     sensorManager.registerListener(
@@ -1424,6 +1470,7 @@ fun SensorTestBottomSheet(
                         "Can't register gyroscope as the device don't have it."
                     )
                 }
+
             }
 
             else -> {
@@ -1437,8 +1484,9 @@ fun SensorTestBottomSheet(
                 }
             }
         }
-
     }
+
+
     DisposableEffect(Unit) {
         onDispose {
             sensorManager.unregisterListener(sensorEventListener)
@@ -1446,12 +1494,18 @@ fun SensorTestBottomSheet(
         }
     }
     if (state.value) {
+        val height = remember {
+            mutableIntStateOf(0)
+        }
         ModalBottomSheet(
-            onDismissRequest = { state.value = false },
+            onDismissRequest = {
+                vM.textToDisplayState.value = false
+                state.value = false
+            },
             shape = RoundedCornerShape(30.dp),
             modifier = Modifier
                 .fillMaxWidth()
-                .height(205.dp)
+                .height(height.intValue.dp)
                 .padding(18.dp),
             scrimColor = Color.Transparent,
             sheetState = SheetState(
@@ -1467,6 +1521,14 @@ fun SensorTestBottomSheet(
             ) {
                 when (index) {
                     0 -> {
+                        if (!vM.textToDisplayState.value) {
+                            height.intValue = 500
+                            SplashScreen(
+                                displayText = stringResource(id = R.string.Accelerometer_Detail),
+                                vM
+                            )
+                        } else {
+                            height.intValue = 205
                         if (accelerometer != null) {
                             TextFn(
                                 text = "Linear acceleration values",
@@ -1503,6 +1565,7 @@ fun SensorTestBottomSheet(
                                     "SpeakerBtmSheetStatus",
                                     "${state.value} X: ${accelerationX.floatValue} Y: ${accelerationY.floatValue} Z: ${accelerationZ.floatValue}"
                                 )
+                                vM.textToDisplayState.value = false
                                 vM.UpdateResultAfterTest(
                                     context = context,
                                     testName = vM.accelerometerSensorTestName,
@@ -1521,13 +1584,23 @@ fun SensorTestBottomSheet(
                                 size = 24
                             )
                             LaunchedEffect(Unit) {
+                                vM.textToDisplayState.value = false
                                 delay(3000)
                                 state.value = false
                             }
                         }
+                        }
                     }
 
                     1 -> {
+                        if (!vM.textToDisplayState.value) {
+                            height.intValue = 500
+                            SplashScreen(
+                                displayText = stringResource(id = R.string.Gyroscope_Detail),
+                                vM
+                            )
+                        } else {
+                            height.intValue = 205
                         if (gyroscope != null) {
                             TextFn(
                                 text = "Gyroscope values",
@@ -1566,6 +1639,7 @@ fun SensorTestBottomSheet(
                             if (omegaMagnitude.floatValue > 0.5) {
                                 vM.MinVib(vibrator)
                                 state.value = false
+                                vM.textToDisplayState.value = false
                                 vM.UpdateResultAfterTest(
                                     context = context,
                                     testName = vM.gyroscopeSensorTestName,
@@ -1586,11 +1660,21 @@ fun SensorTestBottomSheet(
                             LaunchedEffect(Unit) {
                                 delay(3000)
                                 state.value = false
+                                vM.textToDisplayState.value = false
                             }
+                        }
                         }
                     }
 
                     else -> {
+                        if (!vM.textToDisplayState.value) {
+                            height.intValue = 500
+                            SplashScreen(
+                                displayText = stringResource(id = R.string.Accelerometer_Detail),
+                                vM
+                            )
+                        } else {
+                            height.intValue = 205
                         Column(
                             modifier = Modifier.fillMaxSize(),
                             verticalArrangement = Arrangement.Top,
@@ -1642,6 +1726,7 @@ fun SensorTestBottomSheet(
                                 )
                                 if (lightResult.value) {
                                    vM.MinVib(vibrator)
+                                    vM.textToDisplayState.value = false
                                     vM.UpdateResultAfterTest(
                                         context = context,
                                         testName = vM.lightSensorTestName,
@@ -1659,8 +1744,10 @@ fun SensorTestBottomSheet(
                                 LaunchedEffect(Unit) {
                                     delay(3000)
                                     state.value = false
+                                    vM.textToDisplayState.value = false
                                 }
                             }
+                        }
                         }
                     }
                 }

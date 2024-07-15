@@ -44,6 +44,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -54,13 +55,14 @@ import androidx.wear.compose.material.Text
 import com.turbotech.displaytest.R
 import com.turbotech.displaytest.components.TextFn
 import com.turbotech.displaytest.components.TopAppBarFn
+import com.turbotech.displaytest.viewModel.HRViewModel
 
 @SuppressLint("MissingPermission")
 @Suppress( "Deprecation")
 @OptIn(ExperimentalMaterial3Api::class)
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
 @Composable
-fun WifiScreen(navController: NavController) {
+fun WifiScreen(navController: NavController, hrViewModel: HRViewModel) {
     val context = LocalContext.current
     val wifiManager = context.getSystemService(Context.WIFI_SERVICE) as WifiManager
     val ssid = wifiManager.scanResults.map { map ->
@@ -80,7 +82,12 @@ fun WifiScreen(navController: NavController) {
     val wifiState = remember { mutableStateOf(false) }
     val keyboardController = LocalSoftwareKeyboardController.current
 
-
+    if (!hrViewModel.textToDisplayState.value) {
+        SplashScreen(
+            displayText = stringResource(id = R.string.wifi_Detail),
+            hrViewModel
+        )
+    } else {
     Surface(
         modifier = Modifier
             .fillMaxSize()
@@ -214,7 +221,7 @@ fun WifiScreen(navController: NavController) {
                                     }
                                 }
                             }
-                            if (wifiState.value && !displayName.value.isNullOrEmpty() && !passwordInput.value.isNullOrEmpty()) {
+                            if (wifiState.value && displayName.value.isNotEmpty() && passwordInput.value.isNotEmpty()) {
                                 Wifictrl(
                                     wifiManager = wifiManager,
                                     displayName.value,
@@ -252,6 +259,7 @@ fun WifiScreen(navController: NavController) {
                 }
             }
         }
+    }
     }
 }
 

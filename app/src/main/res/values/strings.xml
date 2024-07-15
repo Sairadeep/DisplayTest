@@ -1,3 +1,20 @@
 <resources>
     <string name="app_name">Health Report</string>
+    <string name="singleTouch_Detail"> Tap the screen for a minimum of 15 times to conclude the single touch test result …!</string>
+    <string name="swipeTouch_Detail"> Swipe the complete screen where a green color canvas is drawn for the swiped area within 30 seconds from the start of the test. As for the report, we need a minimum of 95 % draw area coverage …!</string>
+    <string name = "Multi_Touch_Detail"> Tap the screen with more than 3 finger at a time to know the number of touches at a time</string>
+    <string name="Pin_Zoom_Detail"> Try zooming the device to a minimum of 4x and also rotate the image to 180 degrees to conclude the Zoom and Rotate screen test …! </string>
+    <string name="Speaker_Detail"> A sample music is played for a time period of 10 seconds with a varied pitch. Please acknowledge it, if you hear the music with varied pitch for speaker test result…!  </string>
+    <string name="vibration_Detail"> Device will be vibrated for 5 seconds to conclude the vibration test result …!</string>
+    <string name="Microphone_Detail"> User is allowed to speak something where the same text is printed as a preview for the users acknowledgement to conclude the microphone test result …!</string>
+    <string name="Ringtone_Detail"> Device rings for 5 seconds to conclude the ringtone test..!</string>
+    <string name="Alarm_Detail"> Device rings with alarm tone for 5 seconds to conclude the alarm test..!</string>
+    <string name="Notification_Detail"> Device rings with notification tone to conclude the notification test..!</string>
+    <string name="wifi_Detail"> A list of available Wi-Fi are shown where the user can connect to the preferred network by manually providing the Wi-Fi password..! </string>
+    <string name="bluetooth_Detail"> A list of paired and scanned devices are shown where the user can connect and share a file..!</string>
+    <string name="location_Detail">Based on the latitude and longitude, the users location is displayed on the map.</string>
+    <string name="Accelerometer_Detail"> Please move the device for accelerometer values. When the device accelerometer reaches the threshold value, test concludes..! </string>
+    <string name="Gyroscope_Detail"> Please rotate the device for gyroscope values. When the device magnitude reaches the threshold value, test concludes..!</string>
+    <string name="Light_Sensor"> Based on the device light sensor, values are displayed for a specific period of 5 seconds..!</string>
+    <string name="camera"> The captured image is shown as a preview for user acknowledgement for the camera test result..!</string>
 </resources>

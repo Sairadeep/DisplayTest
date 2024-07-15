@@ -9,22 +9,26 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavController
+import com.turbotech.displaytest.R
 import com.turbotech.displaytest.components.TopAppBarFn
 import com.turbotech.displaytest.viewModel.HRViewModel
 
 @Composable
-fun PinchToZoom(navController: NavController, HRViewModel: HRViewModel) {
+fun PinchToZoom(navController: NavController, hrViewModel: HRViewModel) {
 
     val context = LocalContext.current
     LaunchedEffect(Unit) {
-        HRViewModel.insertResultBeforeTest(HRViewModel.pinchToZoomTestName)
+        hrViewModel.insertResultBeforeTest(hrViewModel.pinchToZoomTestName)
     }
-
+    if (!hrViewModel.textToDisplayState.value) {
+        SplashScreen(displayText = stringResource(id = R.string.Pin_Zoom_Detail), hrViewModel)
+    } else {
     Surface(modifier = Modifier.fillMaxSize()) {
         Scaffold(
             topBar = {
-                TopAppBarFn(text = HRViewModel.pinchToZoomTestName, navController)
+                TopAppBarFn(text = hrViewModel.pinchToZoomTestName, navController)
             },
         ) {
             Column(
@@ -32,15 +36,16 @@ fun PinchToZoom(navController: NavController, HRViewModel: HRViewModel) {
                     .fillMaxSize()
                     .padding(it)
             ) {
-                if (HRViewModel.zoomTransformableState()) {
-                    HRViewModel.UpdateResultAfterTest(
+                if (hrViewModel.zoomTransformableState()) {
+                    hrViewModel.UpdateResultAfterTest(
                         context = context,
-                        testName = HRViewModel.pinchToZoomTestName,
+                        testName = hrViewModel.pinchToZoomTestName,
                         testResult = true
                     )
                     navController.navigate("HomePage")
                 }
             }
         }
+    }
     }
 }

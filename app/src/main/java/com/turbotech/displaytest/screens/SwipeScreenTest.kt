@@ -27,26 +27,27 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavController
+import com.turbotech.displaytest.R
 import com.turbotech.displaytest.viewModel.HRViewModel
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-fun SwipeScreenTest(navController: NavController, HRViewModel: HRViewModel) {
+fun SwipeScreenTest(navController: NavController, hRViewModel: HRViewModel) {
 
     val context = LocalContext.current
-    val timerState = remember { mutableStateOf(false) }
     lateinit var timer: CountDownTimer
     val drawWidth = remember { mutableFloatStateOf(0f) }
     val drawHeight = remember { mutableFloatStateOf(0f) }
+    val drawTimeStatus = remember {
+        mutableStateOf(false)
+    }
     BackHandler (
-        enabled = false,
+        enabled = true,
         onBack = {
-            if (timerState.value) {
-                Toast.makeText(context, "Back Navigation restricted", Toast.LENGTH_SHORT).show()
-            } else {
-                navController.navigate("HomePage")
-            }
+            navController.navigate("HomePage")
+            hRViewModel.textToDisplayState.value = false
         }
     )
     val lastTouchInX = remember {
@@ -64,13 +65,16 @@ fun SwipeScreenTest(navController: NavController, HRViewModel: HRViewModel) {
         mutableLongStateOf(0L)
     }
     val swipeResult = remember { mutableStateOf(false) }
-    val drawTimeStatus = remember {
-        mutableStateOf(false)
-    }
-    LaunchedEffect(Unit) {
-        HRViewModel.insertResultBeforeTest(HRViewModel.swipeTestName)
-    }
 
+    LaunchedEffect(Unit) {
+        hRViewModel.insertResultBeforeTest(hRViewModel.swipeTestName)
+    }
+    if (!hRViewModel.textToDisplayState.value) {
+        SplashScreen(
+            displayText = stringResource(id = R.string.swipeTouch_Detail),
+            hrViewModel = hRViewModel
+        )
+    } else {
     Column(
     modifier = Modifier
     .fillMaxSize(),
@@ -86,6 +90,7 @@ fun SwipeScreenTest(navController: NavController, HRViewModel: HRViewModel) {
             override fun onFinish() {
                 drawTimeStatus.value = true
                 Toast.makeText(context, "Test Completed..!", Toast.LENGTH_SHORT).show()
+                hRViewModel.textToDisplayState.value = false
                 navController.navigate("HomePage")
             }
 
@@ -174,13 +179,15 @@ fun SwipeScreenTest(navController: NavController, HRViewModel: HRViewModel) {
                 timer.cancel()
             }
             if (swipeResult.value) {
-                HRViewModel.UpdateResultAfterTest(
+                hRViewModel.UpdateResultAfterTest(
                     context = context,
-                    testName = HRViewModel.swipeTestName,
+                    testName = hRViewModel.swipeTestName,
                     testResult = true
                 )
+                hRViewModel.textToDisplayState.value = false
                 navController.navigate("HomePage")
             }
         }
+    }
     }
 }

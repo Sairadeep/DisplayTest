@@ -98,7 +98,7 @@ class HRViewModel @Inject constructor(
     val pinchToZoomTestName: String = "Pinch_To_Zoom_Test"
     val speakTestName: String = "Speaker_Test"
     val vibrationTestName: String = "Vibration_Test"
-    val micTestName: String = "Microphone_Test"
+    private val micTestName: String = "Microphone_Test"
     val recognizedValue = mutableStateOf("")
     val ringtoneTestName: String = "Ringtone_Test"
     val alarmTestName: String = "Alarm_Test"
@@ -111,6 +111,7 @@ class HRViewModel @Inject constructor(
     val lightSensorTestName: String = "Light_Sensor_Test"
     val rearCamTest = "Rear_Camera_Test"
     val frontCamTest = "Front_Camera_Test"
+    val textToDisplayState = mutableStateOf(false)
     val boxState = mutableStateOf(false)
     val xPosition = mutableStateOf(0.dp)
     val yPosition = mutableStateOf(0.dp)
@@ -302,6 +303,8 @@ class HRViewModel @Inject constructor(
                 )
             }
         } else {
+            noOfClicks.intValue = 0
+            boxState.value = false
             UpdateResultAfterTest(
                 context = LocalContext.current,
                 testName = singleTouchTestName,
@@ -397,7 +400,7 @@ class HRViewModel @Inject constructor(
                     text = "Have you spoke this? \n ${recognizedValue.value}",
                     color = Color.Black,
                     size = 16
-                )
+                )                                  
                 Spacer(modifier = Modifier.height(10.dp))
                 Row(
                     modifier = Modifier.fillMaxSize(),
@@ -532,6 +535,7 @@ class HRViewModel @Inject constructor(
         DisposableEffect(Unit) {
             onDispose {
                 ringtone.stop()
+                textToDisplayState.value = false
                 ringtoneTestResults.value = false
                 alarmTestResults.value = false
                 notificationTestResults.value = false

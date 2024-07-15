@@ -112,10 +112,10 @@ fun Display_Test() {
             PinchToZoom(navController, vModel)
         }
         composable(route = "WifiScreen") {
-            WifiScreen(navController)
+            WifiScreen(navController,vModel)
         }
         composable(route = "BluetoothScreen") {
-            BluetoothScreen(navController)
+            BluetoothScreen(navController, vModel)
         }
     }
 }

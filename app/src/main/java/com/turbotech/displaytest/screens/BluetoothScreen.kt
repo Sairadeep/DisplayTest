@@ -9,11 +9,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavController
+import com.turbotech.displaytest.viewModel.HRViewModel
 
 
 @RequiresApi(Build.VERSION_CODES.S)
 @Composable
-fun BluetoothScreen(navController: NavController) {
+fun BluetoothScreen(navController: NavController, hrViewModel: HRViewModel) {
     /**
      * To implement the actual behaviour
      */
@@ -27,7 +28,13 @@ fun BluetoothScreen(navController: NavController) {
             navController.navigate("HomePage")
         }
     )
-    /* Surface {
+    /*if (!hrViewModel.textToDisplayState.value) {
+        SplashScreen(
+            displayText = stringResource(id = R.string.bluetooth_detail),
+            hrViewModel
+        )
+    } else {
+     Surface {
          Column(
              modifier = Modifier.fillMaxSize(),
              verticalArrangement = Arrangement.Center,
@@ -55,5 +62,5 @@ fun BluetoothScreen(navController: NavController) {
              Log.d("BluetoothScreenResults", "Stopping scan")
              hrViewModel.stopScan()
          }
-     }   */
+     } }  */
 }

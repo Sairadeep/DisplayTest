@@ -11,29 +11,33 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.turbotech.displaytest.R
 import com.turbotech.displaytest.components.TopAppBarFn
 import com.turbotech.displaytest.viewModel.HRViewModel
 
 @Composable
-fun SingleTouch(navController: NavController, HRViewModel: HRViewModel) {
-
+fun SingleTouch(navController: NavController, hRViewModel: HRViewModel) {
     LaunchedEffect(Unit) {
-        HRViewModel.insertResultBeforeTest(HRViewModel.singleTouchTestName)
+        hRViewModel.insertResultBeforeTest(hRViewModel.singleTouchTestName)
     }
-
+    if (!hRViewModel.textToDisplayState.value) {
+        SplashScreen(displayText = stringResource(id = R.string.singleTouch_Detail), hRViewModel)
+    } else {
     Scaffold(
         topBar = {
-            TopAppBarFn(HRViewModel.singleTouchTestName,navController)
+            TopAppBarFn(hRViewModel.singleTouchTestName, navController)
         },
         bottomBar = {
-            SingleTouchBottomBar(HRViewModel)
+            SingleTouchBottomBar(hRViewModel)
         }
     ) {
 
@@ -43,23 +47,29 @@ fun SingleTouch(navController: NavController, HRViewModel: HRViewModel) {
                 .pointerInput(Unit) {
 //                  convert it to dp to avoid conversion of pixels or xdp or xxx dp
                     detectTapGestures { offset ->
-                        HRViewModel.xPosition.value = offset.x.toDp()
-                        HRViewModel.yPosition.value = offset.y.toDp()
-                        HRViewModel.boxState.value = true
-                        HRViewModel.noOfClicks.intValue += 1
-                        HRViewModel.noC.add(HRViewModel.noOfClicks.intValue)
+                        hRViewModel.xPosition.value = offset.x.toDp()
+                        hRViewModel.yPosition.value = offset.y.toDp()
+                        hRViewModel.boxState.value = true
+                        hRViewModel.noOfClicks.intValue += 1
+                        hRViewModel.noC.add(hRViewModel.noOfClicks.intValue)
                     }
                 }
                 .fillMaxSize()
                 .background(Color.Red)
         ) {
-            HRViewModel.ClickSelectionBox(navController = navController)
+            hRViewModel.ClickSelectionBox(navController = navController)
+        }
+      }
+    }
+    DisposableEffect(Unit) {
+        onDispose {
+            hRViewModel.textToDisplayState.value = false
         }
     }
 }
 
 @Composable
-private fun SingleTouchBottomBar(HRViewModel: HRViewModel) {
+private fun SingleTouchBottomBar(hRViewModel: HRViewModel) {
     BottomAppBar(
         modifier = Modifier
             .height(55.dp)
@@ -71,7 +81,7 @@ private fun SingleTouchBottomBar(HRViewModel: HRViewModel) {
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            HRViewModel.TextBasedOnClicks()
+            hRViewModel.TextBasedOnClicks()
         }
     }
 }
