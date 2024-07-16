@@ -1396,8 +1396,14 @@ fun SensorTestBottomSheet(
     val accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
     val gyroscope = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE)
     val lightSensor = sensorManager.getDefaultSensor(Sensor.TYPE_LIGHT)
+    val lastUpdate = remember { mutableLongStateOf(0) }
+    val updateDelay = remember { mutableLongStateOf(500) }
     val sensorEventListener = object : SensorEventListener {
         override fun onSensorChanged(event: SensorEvent) {
+            val currentTime = System.currentTimeMillis()
+            if (currentTime - lastUpdate.longValue > updateDelay.longValue) {
+                // Slowing down updation of sensor values.
+                lastUpdate.longValue = currentTime
             when (event.sensor) {
                 gyroscope -> {
                     rotationX.floatValue = event.values[0]
@@ -1416,6 +1422,7 @@ fun SensorTestBottomSheet(
                 }
 
                 accelerometer -> {
+
                     val alpha = 0.8f
                     gravity[0] = alpha * gravity[0] + (1 - alpha) * event.values[0]
                     gravity[1] = alpha * gravity[1] + (1 - alpha) * event.values[1]
@@ -1424,12 +1431,16 @@ fun SensorTestBottomSheet(
                     accelerationX.floatValue = event.values[0] - gravity[0]
                     accelerationY.floatValue = event.values[1] - gravity[1]
                     accelerationZ.floatValue = event.values[2] - gravity[2]
+
                 }
 
                 lightSensor -> {
                     lightIllumination.floatValue = event.values[0]
                     Log.d("Light", "${lightIllumination.floatValue}")
                 }
+            }
+            } else{
+                Log.d("SensorEventDelay", "Delay ${currentTime - lastUpdate.longValue} ${updateDelay.longValue}")
             }
         }
 
@@ -1529,7 +1540,7 @@ fun SensorTestBottomSheet(
                             )
                         } else {
                             height.intValue = 205
-                        if (accelerometer != null) {
+                            if (accelerometer != null) {
                             TextFn(
                                 text = "Linear acceleration values",
                                 color = Color.Black,
@@ -1670,7 +1681,7 @@ fun SensorTestBottomSheet(
                         if (!vM.textToDisplayState.value) {
                             height.intValue = 500
                             SplashScreen(
-                                displayText = stringResource(id = R.string.Accelerometer_Detail),
+                                displayText = stringResource(id = R.string.Light_Sensor),
                                 vM
                             )
                         } else {

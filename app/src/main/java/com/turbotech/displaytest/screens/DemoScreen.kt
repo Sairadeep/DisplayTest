@@ -24,9 +24,9 @@ import kotlinx.coroutines.delay
 @Composable
 fun SplashScreen(displayText: String, hrViewModel: HRViewModel) {
     Surface {
-        var textToDisplay by remember {
-            mutableStateOf("")
-        }
+
+        var textToDisplay by remember { mutableStateOf("") }
+
         Column(
             modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.Center,
@@ -34,7 +34,7 @@ fun SplashScreen(displayText: String, hrViewModel: HRViewModel) {
         ) {
             LaunchedEffect(Unit) {
                 for (i in 1..displayText.length) {
-                    // So we have something like typewriter effect
+                    // Typewriter effect
                     textToDisplay = displayText.substring(0, i)
                     delay(100)
                 }
@@ -46,7 +46,7 @@ fun SplashScreen(displayText: String, hrViewModel: HRViewModel) {
                 fontStyle = FontStyle.Italic,
                 fontWeight = FontWeight.Bold,
                 letterSpacing = 2.sp,
-                lineHeight = 60.sp,
+                lineHeight = 45.sp,
                 textAlign = TextAlign.Center
             )
         }

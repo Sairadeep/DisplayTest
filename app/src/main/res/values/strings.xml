@@ -13,7 +13,7 @@
     <string name="wifi_Detail"> A list of available Wi-Fi are shown where the user can connect to the preferred network by manually providing the Wi-Fi password..! </string>
     <string name="bluetooth_Detail"> A list of paired and scanned devices are shown where the user can connect and share a file..!</string>
     <string name="location_Detail">Based on the latitude and longitude, the users location is displayed on the map.</string>
-    <string name="Accelerometer_Detail"> Please move the device for accelerometer values. When the device accelerometer reaches the threshold value, test concludes..! </string>
+    <string name="Accelerometer_Detail"> Please move the device for accelerometer values. When the device accelerometer values reaches the threshold value, test concludes..! </string>
     <string name="Gyroscope_Detail"> Please rotate the device for gyroscope values. When the device magnitude reaches the threshold value, test concludes..!</string>
     <string name="Light_Sensor"> Based on the device light sensor, values are displayed for a specific period of 5 seconds..!</string>
     <string name="camera"> The captured image is shown as a preview for user acknowledgement for the camera test result..!</string>
